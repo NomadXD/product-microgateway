@@ -61,7 +61,8 @@ func FindSwaggerVersion(jsn []byte) string {
 	if err != nil {
 		logger.LoggerOasparser.Error("json unmarsheliing err when finding the swaggerVersion : ", err)
 	}
-
+	//logger.LoggerOasparser.Info("YYYYYYY")
+	//logger.LoggerOasparser.Info(result)
 	if _, ok := result["swagger"]; ok {
 		version = "2"
 	} else if _, ok := result["openapi"]; ok {

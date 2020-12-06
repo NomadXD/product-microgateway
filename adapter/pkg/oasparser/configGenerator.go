@@ -24,6 +24,7 @@ import (
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 
+	logger "github.com/wso2/micro-gw/loggers"
 	envoy "github.com/wso2/micro-gw/pkg/oasparser/envoyconf"
 	"github.com/wso2/micro-gw/pkg/oasparser/operator"
 )
@@ -32,6 +33,7 @@ import (
 // when the openAPI Json is provided.
 func GetProductionRoutesClustersEndpoints(byteArr []byte) ([]*routev3.Route, []*clusterv3.Cluster, []*corev3.Address) {
 	mgwSwagger := operator.GetMgwSwagger(byteArr)
+	logger.LoggerOasparser.Info(mgwSwagger)
 	routes, clusters, endpoints, _, _, _ := envoy.CreateRoutesWithClusters(mgwSwagger)
 	return routes, clusters, endpoints
 }

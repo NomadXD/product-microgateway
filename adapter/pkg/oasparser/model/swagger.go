@@ -53,9 +53,14 @@ func (swagger *MgwSwagger) SetInfoSwagger(swagger2 spec.Swagger) {
 			//TODO: (VirajSalaka) Introduce Constants
 			if scheme == "https" {
 				urlScheme = "https://"
+				swagger.SetProtocol("https")
 				break
 			} else if scheme == "http" {
 				urlScheme = "http://"
+				swagger.SetProtocol("http")
+			} else if scheme == "ws" {
+				urlScheme = "ws://"
+				swagger.SetProtocol("ws")
 			} else {
 				//TODO: (VirajSalaka) Throw an error and stop processing
 				logger.LoggerOasparser.Errorf("The scheme : %v for the swagger definition %v:%v is not supported", scheme,

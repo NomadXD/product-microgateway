@@ -103,6 +103,8 @@ func UpdateEnvoy(byteArr []byte) {
 	defer l.Unlock()
 
 	openAPIVersion, jsonContent, err := operator.GetOpenAPIVersionAndJSONContent(byteArr)
+	logger.LoggerXds.Info("XXXXXXXXXXXXXXXXXX")
+	logger.LoggerXds.Info(jsonContent)
 	if err != nil {
 		logger.LoggerXds.Error("Error while retrieving the openAPI version and Json Content from byte Array.", err)
 		return

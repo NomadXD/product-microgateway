@@ -139,6 +139,7 @@ func getHostandBasepathandPort(rawURL string) Endpoint {
 		rawURL = "http://" + rawURL
 	}
 	parsedURL, err := url.Parse(rawURL)
+	logger.LoggerOasparser.Info(parsedURL)
 	if err != nil {
 		logger.LoggerOasparser.Fatal(err)
 	}
@@ -161,6 +162,8 @@ func getHostandBasepathandPort(rawURL string) Endpoint {
 	urlType = "http"
 	if strings.HasPrefix(rawURL, "https://") {
 		urlType = "https"
+	} else if strings.HasPrefix(rawURL, "ws://") {
+		urlType = "ws"
 	}
 	return Endpoint{Host: host, Basepath: basepath, Port: port, URLType: urlType}
 }

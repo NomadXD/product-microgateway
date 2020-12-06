@@ -35,6 +35,7 @@ type MgwSwagger struct {
 	sandboxUrls      []Endpoint
 	resources        []Resource
 	xWso2Basepath    string
+	protocol         string
 }
 
 // Endpoint represents the structure of an endpoint.
@@ -185,4 +186,14 @@ func getXWso2Basepath(vendorExtensible map[string]interface{}) string {
 
 func (swagger *MgwSwagger) setXWso2Basepath() {
 	swagger.xWso2Basepath = getXWso2Basepath(swagger.vendorExtensible)
+}
+
+// GetProtocol returns the protocol of the MGWSwagger object
+func (swagger *MgwSwagger) GetProtocol() string {
+	return swagger.protocol
+}
+
+// SetProtocol sets the protocol type of the MGWSwagger object
+func (swagger *MgwSwagger) SetProtocol(protocol string) {
+	swagger.protocol = protocol
 }

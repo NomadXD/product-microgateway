@@ -82,16 +82,22 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 	// check API level production endpoints available
 	if len(mgwSwagger.GetProdEndpoints()) > 0 {
 		apiLevelEndpointProd = mgwSwagger.GetProdEndpoints()
+		logger.LoggerXds.Info(apiLevelEndpointProd)
 		apilevelAddressP := createAddress(apiLevelEndpointProd[0].Host, apiLevelEndpointProd[0].Port)
+		logger.LoggerXds.Info(apilevelAddressP)
 		apiLevelClusterNameProd = strings.TrimSpace(prodClustersConfigNamePrefix +
 			strings.Replace(mgwSwagger.GetTitle(), " ", "", -1) + mgwSwagger.GetVersion())
+		logger.LoggerXds.Info(apiLevelClusterNameProd)
 		apilevelClusterProd = createCluster(apilevelAddressP, apiLevelClusterNameProd, apiLevelEndpointProd[0].URLType)
+		logger.LoggerXds.Info(apilevelClusterProd)
 		clustersProd = append(clustersProd, apilevelClusterProd)
 		endpointsProd = append(endpointsProd, apilevelAddressP)
 
 	} else {
 		logger.LoggerOasparser.Warn("API level Producton endpoints are not defined")
 	}
+	resourceVar := mgwSwagger.GetResources()
+	logger.LoggerOasparser.Info(resourceVar)
 	for _, resource := range mgwSwagger.GetResources() {
 		apiTitle := mgwSwagger.GetTitle()
 		apiVersion := mgwSwagger.GetVersion()
@@ -123,7 +129,8 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			routesSand = append(routesSand, routeS)
 
 		}
-
+		logger.LoggerOasparser.Info(mgwSwagger.GetProdEndpoints())
+		logger.LoggerOasparser.Info(resource.GetProdEndpoints())
 		// resource level check production endpoints
 		if len(resource.GetProdEndpoints()) > 0 {
 			endpointProd = resource.GetProdEndpoints()
@@ -134,7 +141,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			clusterProd := createCluster(addressProd, clusterNameProd, endpointProd[0].URLType)
 			clustersProd = append(clustersProd, clusterProd)
 			clusterRefProd := clusterProd.GetName()
-
+			logger.LoggerOasparser.Info("Resource>>>>>>>", endpointProd[0], resource)
 			// production endpoints
 			routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], resource, clusterRefProd)
 			routesProd = append(routesProd, routeP)
@@ -146,13 +153,25 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			clusterRefProd := apilevelClusterProd.GetName()
 
 			// production endpoints
+			logger.LoggerOasparser.Info("mgwSwagger>>>>>>>", endpointProd[0], resource)
 			routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], resource, clusterRefProd)
+			logger.LoggerOasparser.Info(routeP)
 			routesProd = append(routesProd, routeP)
 
 		} else {
 			logger.LoggerOasparser.Fatalf("Producton endpoints are not defined")
 		}
 	}
+	// if mgwSwagger.GetProtocol() == "ws" {
+	// 	apiTitle := mgwSwagger.GetTitle()
+	// 	apiVersion := mgwSwagger.GetVersion()
+	// 	apiBasePath := mgwSwagger.GetXWso2Basepath()
+	// 	endpointProd = apiLevelEndpointProd
+	// 	clusterRefProd := apilevelClusterProd.GetName()
+	// 	routerP := createRoute(apiTitle, apiBasePath, endpointProd[0], )
+
+	// }
+
 	return routesProd, clustersProd, endpointsProd, routesSand, clustersSand, endpointsSand
 }
 
