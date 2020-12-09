@@ -15,6 +15,7 @@ require (
 	github.com/go-openapi/strfmt v0.19.6
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.11
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4

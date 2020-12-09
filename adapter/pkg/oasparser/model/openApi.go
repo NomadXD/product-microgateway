@@ -146,6 +146,7 @@ func getHostandBasepathandPort(rawURL string) Endpoint {
 
 	host = parsedURL.Hostname()
 	basepath = parsedURL.Path
+	logger.LoggerOasparser.Info("basepath>>>>>>>>>: ", basepath)
 	if parsedURL.Port() != "" {
 		u32, err := strconv.ParseUint(parsedURL.Port(), 10, 32)
 		if err != nil {
@@ -153,7 +154,7 @@ func getHostandBasepathandPort(rawURL string) Endpoint {
 		}
 		port = uint32(u32)
 	} else {
-		if strings.HasPrefix(rawURL, "https://") {
+		if strings.HasPrefix(rawURL, "https://") || strings.HasPrefix(rawURL, "wss://") {
 			port = uint32(443)
 		} else {
 			port = uint32(80)
@@ -164,6 +165,8 @@ func getHostandBasepathandPort(rawURL string) Endpoint {
 		urlType = "https"
 	} else if strings.HasPrefix(rawURL, "ws://") {
 		urlType = "ws"
+	} else if strings.HasPrefix(rawURL, "wss://") {
+		urlType = "wss"
 	}
 	return Endpoint{Host: host, Basepath: basepath, Port: port, URLType: urlType}
 }

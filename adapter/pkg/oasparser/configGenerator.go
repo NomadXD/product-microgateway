@@ -33,7 +33,7 @@ import (
 // when the openAPI Json is provided.
 func GetProductionRoutesClustersEndpoints(byteArr []byte) ([]*routev3.Route, []*clusterv3.Cluster, []*corev3.Address) {
 	mgwSwagger := operator.GetMgwSwagger(byteArr)
-	logger.LoggerOasparser.Info(mgwSwagger)
+	logger.LoggerOasparser.Info("mgwSwagger>>>>>>>> :", mgwSwagger)
 	routes, clusters, endpoints, _, _, _ := envoy.CreateRoutesWithClusters(mgwSwagger)
 	return routes, clusters, endpoints
 }

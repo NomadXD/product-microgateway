@@ -34,6 +34,7 @@ import (
 //
 // No operation specific information is extracted.
 func (swagger *MgwSwagger) SetInfoSwagger(swagger2 spec.Swagger) {
+	logger.LoggerOasparser.Info("Swagger2>>>>>>: ", swagger2)
 	swagger.id = swagger2.ID
 	swagger.swaggerVersion = swagger2.Swagger
 	if swagger2.Info != nil {
@@ -42,6 +43,7 @@ func (swagger *MgwSwagger) SetInfoSwagger(swagger2 spec.Swagger) {
 		swagger.version = swagger2.Info.Version
 	}
 	swagger.vendorExtensible = swagger2.VendorExtensible.Extensions
+	logger.LoggerOasparser.Info("vendorExtensible>>>>>>: ", swagger.vendorExtensible)
 	swagger.resources = setResourcesSwagger(swagger2)
 
 	// According to the definition, multiple schemes can be mentioned. Since the microgateway can assign only one scheme
@@ -61,12 +63,16 @@ func (swagger *MgwSwagger) SetInfoSwagger(swagger2 spec.Swagger) {
 			} else if scheme == "ws" {
 				urlScheme = "ws://"
 				swagger.SetProtocol("ws")
+			} else if scheme == "wss" {
+				urlScheme = "wss://"
+				swagger.SetProtocol("wss")
 			} else {
 				//TODO: (VirajSalaka) Throw an error and stop processing
 				logger.LoggerOasparser.Errorf("The scheme : %v for the swagger definition %v:%v is not supported", scheme,
 					swagger2.Info.Title, swagger2.Info.Version)
 			}
 		}
+		logger.LoggerOasparser.Info("HOST>>>>>>>>>>> :", swagger2.Host, "BasePath>>>>: ", swagger2.BasePath)
 		endpoint := getHostandBasepathandPort(urlScheme + swagger2.Host + swagger2.BasePath)
 		swagger.productionUrls = append(swagger.productionUrls, endpoint)
 	}
@@ -108,11 +114,20 @@ func setResourcesSwagger(swagger2 spec.Swagger) []Resource {
 				methodFound = true
 			}
 			if methodFound {
+				logger.LoggerOasparser.Info(path, methodsArray, pathItem)
 				resource := setOperationSwagger(path, methodsArray, pathItem)
 				resources = append(resources, resource)
 			}
 		}
 	}
+	// Temporary check for schema WS. This will change when we read api.yaml to check for API type
+	// if len(swagger2.Schemes) == 1 && swagger2.Schemes[0] == "ws" {
+	// 	logger.LoggerOasparser.Info(swagger2.Schemes[0])
+	// 	var methodsArray []string
+	// 	methodsArray = append(methodsArray, "GET")
+	// 	resource := setOperationSwaggerWebSocket(swagger2.BasePath, methodsArray)
+	// 	resources = append(resources, resource)
+	// }
 	return resources
 }
 
@@ -130,6 +145,18 @@ func setOperationSwagger(path string, methods []string, pathItem spec.PathItem) 
 		//tags:             operation.Tags,
 		//security:         operation.Security,
 		vendorExtensible: pathItem.VendorExtensible.Extensions,
+	}
+	return resource
+}
+
+func setOperationSwaggerWebSocket(path string, methods []string) Resource {
+	var resource Resource
+	resource = Resource{
+		path:        path,
+		methods:     methods,
+		iD:          uuid.New().String(),
+		summary:     "",
+		description: "",
 	}
 	return resource
 }

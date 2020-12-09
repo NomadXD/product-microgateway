@@ -29,7 +29,7 @@ import (
 	tlsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes"
-
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/wso2/micro-gw/config"
 	logger "github.com/wso2/micro-gw/loggers"
 )
@@ -69,13 +69,21 @@ func CreateListenerWithRds(listenerName string) *listenerv3.Listener {
 }
 
 func createListener(conf *config.Config, listenerName string) *listenerv3.Listener {
-	httpFilters := getHTTPFilters()
+	//httpFilters := getHTTPFilters()
+	upgradeFilters := getUpgradeFilters()
 	accessLogs := getAccessLogConfigs()
 	var filters []*listenerv3.Filter
 
 	manager := &hcmv3.HttpConnectionManager{
 		CodecType:  hcmv3.HttpConnectionManager_AUTO,
 		StatPrefix: httpConManagerStartPrefix,
+		UpgradeConfigs: []*hcmv3.HttpConnectionManager_UpgradeConfig{
+			{
+				UpgradeType: "websocket",
+				Enabled:     &wrappers.BoolValue{Value: true},
+				Filters:     upgradeFilters,
+			},
+		},
 		RouteSpecifier: &hcmv3.HttpConnectionManager_Rds{
 			Rds: &hcmv3.Rds{
 				//TODO: (VirajSalaka) Decide if we need this to be configurable in the first stage
@@ -88,7 +96,7 @@ func createListener(conf *config.Config, listenerName string) *listenerv3.Listen
 				},
 			},
 		},
-		HttpFilters: httpFilters,
+		HttpFilters: upgradeFilters,
 		AccessLog:   []*access_logv3.AccessLog{accessLogs},
 	}
 
