@@ -44,6 +44,8 @@ var (
 	openAPIV3Map map[string]openAPI3.Swagger
 	// OpenAPI Name:Version -> openAPI2 struct map
 	openAPIV2Map map[string]openAPI2.Swagger
+	// WebSocketAPI Name:Version -> [apiName:foo, ver]
+	webSocketAPIMap map[string]map[string]string
 	// OpenAPI Name:Version -> Envoy Label Array map
 	openAPIEnvoyMap map[string][]string
 	// OpenAPI Name:Version -> Envoy Routes map
@@ -77,6 +79,7 @@ func init() {
 	cache = cachev3.NewSnapshotCache(false, IDHash{}, nil)
 	openAPIV3Map = make(map[string]openAPI3.Swagger)
 	openAPIV2Map = make(map[string]openAPI2.Swagger)
+	webSocketAPIMap = make(map[string]map[string]string)
 	openAPIEnvoyMap = make(map[string][]string)
 	openAPIRoutesMap = make(map[string][]*routev3.Route)
 	openAPIClustersMap = make(map[string][]*clusterv3.Cluster)
@@ -93,7 +96,7 @@ func GetXdsCache() cachev3.SnapshotCache {
 }
 
 // UpdateEnvoy updates the Xds Cache when OpenAPI Json content is provided
-func UpdateEnvoy(byteArr []byte) {
+func UpdateEnvoy(byteArr []byte, apiType string) {
 	var apiMapKey string
 	var newLabels []string
 
@@ -101,45 +104,63 @@ func UpdateEnvoy(byteArr []byte) {
 	var l sync.Mutex
 	l.Lock()
 	defer l.Unlock()
+	if apiType == model.HTTP {
+		openAPIVersion, jsonContent, err := operator.GetOpenAPIVersionAndJSONContent(byteArr)
+		if err != nil {
+			logger.LoggerXds.Error("Error while retrieving the openAPI version and Json Content from byte Array.", err)
+			return
+		}
+		logger.LoggerXds.Debugf("OpenAPI version : %v", openAPIVersion)
+		if openAPIVersion == "3" {
+			openAPIV3Struct, err := operator.GetOpenAPIV3Struct(jsonContent)
+			if err != nil {
+				logger.LoggerXds.Error("Error while parsing to a OpenAPIv3 struct. ", err)
+			}
+			apiMapKey = openAPIV3Struct.Info.Title + ":" + openAPIV3Struct.Info.Version
+			existingOpenAPI, ok := openAPIV3Map[apiMapKey]
+			if ok {
+				if reflect.DeepEqual(openAPIV3Struct, existingOpenAPI) {
+					//Works as the openAPI already contains the label feature.
+					logger.LoggerXds.Infof("No changes to apply for the OpenAPI key : %v", apiMapKey)
+					return
+				}
+			}
+			openAPIV3Map[apiMapKey] = openAPIV3Struct
+			//TODO: (VirajSalaka) Handle OpenAPIs which does not have label (Current Impl , it will be labelled as default)
+			newLabels = model.GetXWso2Label(openAPIV3Struct.ExtensionProps)
+		} else {
+			openAPIV2Struct, err := operator.GetOpenAPIV2Struct(jsonContent)
+			if err != nil {
+				logger.LoggerXds.Error("Error while parsing to a OpenAPIv3 struct. ", err)
+			}
+			apiMapKey = openAPIV2Struct.Info.Title + ":" + openAPIV2Struct.Info.Version
+			existingOpenAPI, ok := openAPIV2Map[apiMapKey]
+			if ok {
+				if reflect.DeepEqual(openAPIV2Struct, existingOpenAPI) {
+					//Works as the openAPI already contains the label feature.
+					logger.LoggerXds.Infof("No changes to apply for the OpenAPI key : %v", apiMapKey)
+					return
+				}
+			}
+			newLabels = operator.GetXWso2Labels(openAPIV2Struct.Extensions)
+		}
 
-	openAPIVersion, jsonContent, err := operator.GetOpenAPIVersionAndJSONContent(byteArr)
-	if err != nil {
-		logger.LoggerXds.Error("Error while retrieving the openAPI version and Json Content from byte Array.", err)
-		return
-	}
-	logger.LoggerXds.Debugf("OpenAPI version : %v", openAPIVersion)
-	if openAPIVersion == "3" {
-		openAPIV3Struct, err := operator.GetOpenAPIV3Struct(jsonContent)
-		if err != nil {
-			logger.LoggerXds.Error("Error while parsing to a OpenAPIv3 struct. ", err)
-		}
-		apiMapKey = openAPIV3Struct.Info.Title + ":" + openAPIV3Struct.Info.Version
-		existingOpenAPI, ok := openAPIV3Map[apiMapKey]
+	} else if apiType == model.WS {
+		webSocketAPIDef := operator.GetWebSocketAPIDef(byteArr)
+		logger.LoggerXds.Info(webSocketAPIDef)
+		apiMapKey = webSocketAPIDef["apiName"] + ":" + webSocketAPIDef["version"]
+		logger.LoggerXds.Info(apiMapKey)
+		existingWebSocketAPI, ok := webSocketAPIMap[apiMapKey]
 		if ok {
-			if reflect.DeepEqual(openAPIV3Struct, existingOpenAPI) {
-				//Works as the openAPI already contains the label feature.
-				logger.LoggerXds.Infof("No changes to apply for the OpenAPI key : %v", apiMapKey)
+			if reflect.DeepEqual(webSocketAPIDef, existingWebSocketAPI) {
+				logger.LoggerXds.Info("No changes to apply for the WebSocketAPI with key: %v", apiMapKey)
 				return
 			}
 		}
-		openAPIV3Map[apiMapKey] = openAPIV3Struct
-		//TODO: (VirajSalaka) Handle OpenAPIs which does not have label (Current Impl , it will be labelled as default)
-		newLabels = model.GetXWso2Label(openAPIV3Struct.ExtensionProps)
-	} else {
-		openAPIV2Struct, err := operator.GetOpenAPIV2Struct(jsonContent)
-		if err != nil {
-			logger.LoggerXds.Error("Error while parsing to a OpenAPIv3 struct. ", err)
-		}
-		apiMapKey = openAPIV2Struct.Info.Title + ":" + openAPIV2Struct.Info.Version
-		existingOpenAPI, ok := openAPIV2Map[apiMapKey]
-		if ok {
-			if reflect.DeepEqual(openAPIV2Struct, existingOpenAPI) {
-				//Works as the openAPI already contains the label feature.
-				logger.LoggerXds.Infof("No changes to apply for the OpenAPI key : %v", apiMapKey)
-				return
-			}
-		}
-		newLabels = operator.GetXWso2Labels(openAPIV2Struct.Extensions)
+		webSocketAPIMap[apiMapKey] = webSocketAPIDef
+		newLabels = operator.GetXWso2LabelsWebSocket(webSocketAPIDef)
+		logger.LoggerXds.Info(newLabels)
+
 	}
 	logger.LoggerXds.Infof("Added/Updated the content under OpenAPI Key : %v", apiMapKey)
 	logger.LoggerXds.Debugf("Newly added labels for the OpenAPI Key : %v are %v", apiMapKey, newLabels)
@@ -156,6 +177,7 @@ func UpdateEnvoy(byteArr []byte) {
 	openAPIEndpointsMap[apiMapKey] = endpoints
 	// TODO: (VirajSalaka) Fault tolerance mechanism implementation
 	updateXdsCacheOnAPIAdd(oldLabels, newLabels)
+
 }
 
 func arrayContains(a []string, x string) bool {
