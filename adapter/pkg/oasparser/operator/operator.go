@@ -122,3 +122,38 @@ func GetXWso2Labels(vendorExtensionsMap map[string]interface{}) []string {
 	}
 	return []string{"default"}
 }
+
+/*
+GetWebSocketAPIDef returns an object of type map[string]string
+e.g : map [
+	apiName : EchoWebSocket
+	version : 1.0
+	context : /echowebsocket/1.0
+]
+TODO: (LahiruUdayanga) add more feilds to apiDef including endpoints and extensions
+*/
+func GetWebSocketAPIDef(apiJSON []byte) map[string]string {
+	var apiDef map[string]interface{}
+	webSocketAPIDef := make(map[string]string)
+	err := json.Unmarshal(apiJSON, &apiDef)
+	if err != nil {
+		panic(err)
+	}
+	info := apiDef["id"].(map[string]interface{})
+	apiName := info["apiName"].(string)
+	version := info["version"].(string)
+	webSocketAPIDef["apiName"] = apiName
+	webSocketAPIDef["version"] = version
+	webSocketAPIDef["context"] = apiDef["context"].(string)
+	return webSocketAPIDef
+
+}
+
+/*
+GetXWso2LabelsWebSocket returns a string array of labels provided using extensions.
+For web sockets, since we are using the api.yaml file, need to figure out a way
+to pass labels. Currently value "default" is returned
+*/
+func GetXWso2LabelsWebSocket(webSocketAPIDef map[string]string) []string {
+	return []string{"default"}
+}
