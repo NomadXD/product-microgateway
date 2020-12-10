@@ -30,3 +30,9 @@ const (
 	xWso2BasePath       string = "x-wso2-basePath"
 	xWso2Label          string = "x-wso2-label"
 )
+
+// Constants for API type
+const (
+	HTTP string = "HTTP"
+	WS   string = "WS"
+)
