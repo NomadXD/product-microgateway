@@ -54,9 +54,11 @@ func (swagger *MgwSwagger) SetInfoSwagger(swagger2 spec.Swagger) {
 			//TODO: (VirajSalaka) Introduce Constants
 			if scheme == "https" {
 				urlScheme = "https://"
+				swagger.protocol = "https"
 				break
 			} else if scheme == "http" {
 				urlScheme = "http://"
+				swagger.protocol = "http"
 			} else {
 				//TODO: (VirajSalaka) Throw an error and stop processing
 				logger.LoggerOasparser.Errorf("The scheme : %v for the swagger definition %v:%v is not supported", scheme,
@@ -147,5 +149,10 @@ func (swagger *MgwSwagger) SetInfoSwaggerWebSocket(apiData map[string]interface{
 	sandBoxEndpoint := getHostandBasepathandPortWebSocket(sandBoxURL.String())
 	swagger.productionUrls = append(swagger.productionUrls, productionEndpoint)
 	swagger.sandboxUrls = append(swagger.sandboxUrls, sandBoxEndpoint)
+	if productionEndpoint.URLType == "ws" {
+		swagger.protocol = "ws"
+	} else if productionEndpoint.URLType == "wss" {
+		swagger.protocol = "wss"
+	}
 
 }
