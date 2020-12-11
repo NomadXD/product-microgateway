@@ -25,6 +25,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-openapi/spec"
+	"github.com/wso2/micro-gw/loggers"
 	logger "github.com/wso2/micro-gw/loggers"
 	"github.com/wso2/micro-gw/pkg/oasparser/model"
 	"github.com/wso2/micro-gw/pkg/oasparser/utills"
@@ -156,4 +157,20 @@ to pass labels. Currently value "default" is returned
 */
 func GetXWso2LabelsWebSocket(webSocketAPIDef map[string]string) []string {
 	return []string{"default"}
+}
+
+/*
+GetMgwSwaggerWebSocket returns a MgwSwagger for the web socket APIs
+*/
+func GetMgwSwaggerWebSocket(apiContent []byte) model.MgwSwagger {
+	var mgwSwagger model.MgwSwagger
+	var apiData map[string]interface{}
+	unmarshalErr := json.Unmarshal(apiContent, &apiData)
+	if unmarshalErr != nil {
+		loggers.LoggerOasparser.Errorf("JSON unmarshalling error: v", unmarshalErr)
+		panic("JSON unmarshalling error")
+	}
+	mgwSwagger.SetInfoSwaggerWebSocket(apiData)
+	return mgwSwagger
+
 }
