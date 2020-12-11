@@ -20,6 +20,7 @@ package model
 import (
 	"github.com/go-openapi/spec"
 	"github.com/google/uuid"
+	"github.com/tidwall/gjson"
 	logger "github.com/wso2/micro-gw/loggers"
 )
 
@@ -127,4 +128,24 @@ func setOperationSwagger(path string, methods []string, pathItem spec.PathItem) 
 		vendorExtensible: pathItem.VendorExtensible.Extensions,
 	}
 	return resource
+}
+
+/*
+SetInfoSwaggerWebSocket populates the mgwSwagger object for web sockets
+*/
+func (swagger *MgwSwagger) SetInfoSwaggerWebSocket(apiData map[string]interface{}) {
+	swagger.id = apiData["uuid"].(string)
+	swagger.swaggerVersion = "WS"
+	info := apiData["id"].(map[string]interface{})
+	swagger.title = info["apiName"].(string)
+	swagger.version = info["version"].(string)
+	swagger.xWso2Basepath = apiData["context"].(string)
+	endpointConfig := apiData["endpointConfig"].(string)
+	productionURL := gjson.Get(endpointConfig, "production_endpoints.url")
+	sandBoxURL := gjson.Get(endpointConfig, "sandbox_endpoints.url")
+	productionEndpoint := getHostandBasepathandPortWebSocket(productionURL.String())
+	sandBoxEndpoint := getHostandBasepathandPortWebSocket(sandBoxURL.String())
+	swagger.productionUrls = append(swagger.productionUrls, productionEndpoint)
+	swagger.sandboxUrls = append(swagger.sandboxUrls, sandBoxEndpoint)
+
 }
