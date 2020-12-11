@@ -24,14 +24,25 @@ import (
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 
+	"github.com/wso2/micro-gw/loggers"
 	envoy "github.com/wso2/micro-gw/pkg/oasparser/envoyconf"
+	"github.com/wso2/micro-gw/pkg/oasparser/model"
 	"github.com/wso2/micro-gw/pkg/oasparser/operator"
 )
 
 // GetProductionRoutesClustersEndpoints generates the routes, clusters and endpoints (envoy)
 // when the openAPI Json is provided.
-func GetProductionRoutesClustersEndpoints(byteArr []byte) ([]*routev3.Route, []*clusterv3.Cluster, []*corev3.Address) {
-	mgwSwagger := operator.GetMgwSwagger(byteArr)
+func GetProductionRoutesClustersEndpoints(byteArr []byte, apiType string) ([]*routev3.Route, []*clusterv3.Cluster, []*corev3.Address) {
+	var mgwSwagger model.MgwSwagger
+	if apiType == model.HTTP {
+		mgwSwagger = operator.GetMgwSwagger(byteArr)
+	} else if apiType == model.WS {
+		mgwSwagger = operator.GetMgwSwaggerWebSocket(byteArr)
+		loggers.LoggerOasparser.Info(mgwSwagger)
+	} else {
+		panic("Unsupported API type")
+	}
+
 	routes, clusters, endpoints, _, _, _ := envoy.CreateRoutesWithClusters(mgwSwagger)
 	return routes, clusters, endpoints
 }
