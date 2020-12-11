@@ -25,6 +25,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/uuid"
+	"github.com/wso2/micro-gw/loggers"
 	logger "github.com/wso2/micro-gw/loggers"
 )
 
@@ -207,4 +208,42 @@ func GetXWso2Label(vendorExtensions openapi3.ExtensionProps) []string {
 		logger.LoggerOasparser.Errorln("Error while parsing the x-wso2-label")
 	}
 	return []string{"default"}
+}
+
+func getHostandBasepathandPortWebSocket(rawURL string) Endpoint {
+	var (
+		basepath string
+		host     string
+		port     uint32
+		urlType  string
+	)
+	if !strings.Contains(rawURL, "://") {
+		rawURL = "ws://" + rawURL
+	}
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		logger.LoggerOasparser.Fatal(err)
+	}
+
+	host = parsedURL.Hostname()
+	basepath = parsedURL.Path
+	loggers.LoggerOasparser.Info(parsedURL)
+	if parsedURL.Port() != "" {
+		u32, err := strconv.ParseUint(parsedURL.Port(), 10, 32)
+		if err != nil {
+			logger.LoggerOasparser.Error("Error passing port value to mgwSwagger", err)
+		}
+		port = uint32(u32)
+	} else {
+		if strings.HasPrefix(rawURL, "wss://") {
+			port = uint32(443)
+		} else {
+			port = uint32(80)
+		}
+	}
+	urlType = "ws"
+	if strings.HasPrefix(rawURL, "wss://") {
+		urlType = "wss"
+	}
+	return Endpoint{Host: host, Basepath: basepath, Port: port, URLType: urlType}
 }
