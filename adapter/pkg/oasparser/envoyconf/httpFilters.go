@@ -45,9 +45,11 @@ func getHTTPFilters() []*hcmv3.HttpFilter {
 }
 
 func getUpgradeFilters() []*hcmv3.HttpFilter {
+	extAauth := getExtAuthzHTTPFilter()
 	router := getRouterHTTPFilter()
 
 	httpFilters := []*hcmv3.HttpFilter{
+		extAauth,
 		router,
 	}
 	return httpFilters

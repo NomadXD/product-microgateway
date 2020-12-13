@@ -27,6 +27,7 @@ import (
 	envoy_type_matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/golang/protobuf/ptypes/wrappers"
 
 	"github.com/wso2/micro-gw/config"
 	logger "github.com/wso2/micro-gw/loggers"
@@ -202,7 +203,7 @@ func createCluster(address *corev3.Address, clusterName string, urlType string) 
 			},
 		},
 	}
-	if strings.HasPrefix(urlType, httpsURLType) {
+	if strings.HasPrefix(urlType, httpsURLType) || strings.HasPrefix(urlType, wssURLType) {
 		upstreamtlsContext := &tlsv3.UpstreamTlsContext{
 			CommonTlsContext: &tlsv3.CommonTlsContext{
 				ValidationContextType: &tlsv3.CommonTlsContext_ValidationContext{
@@ -361,6 +362,10 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 						Substitution: endpoint.Basepath,
 					},
 					ClusterSpecifier: clusterSpecifier,
+					UpgradeConfigs: []*routev3.RouteAction_UpgradeConfig{{
+						UpgradeType: "websocket",
+						Enabled:     &wrappers.BoolValue{Value: false},
+					}},
 				},
 			}
 		}

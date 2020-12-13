@@ -21,9 +21,9 @@ const (
 )
 
 const (
-	extAuthzFilterName string = "envoy.filters.http.ext_authz"
-	transportSocketName string = "envoy.transport_sockets.tls"
-	accessLogName       string = "envoy.access_loggers.file"
+	extAuthzFilterName        string = "envoy.filters.http.ext_authz"
+	transportSocketName       string = "envoy.transport_sockets.tls"
+	accessLogName             string = "envoy.access_loggers.file"
 	httpConManagerStartPrefix string = "ingress_http"
 )
 
@@ -42,4 +42,5 @@ const (
 const (
 	httpsURLType     string = "https"
 	httpMethodHeader string = ":method"
+	wssURLType       string = "wss"
 )

@@ -71,6 +71,7 @@ func CreateListenerWithRds(listenerName string) *listenerv3.Listener {
 
 func createListener(conf *config.Config, listenerName string) *listenerv3.Listener {
 	httpFilters := getHTTPFilters()
+	upgradeFilters := getUpgradeFilters()
 	accessLogs := getAccessLogConfigs()
 	var filters []*listenerv3.Filter
 
@@ -80,6 +81,7 @@ func createListener(conf *config.Config, listenerName string) *listenerv3.Listen
 		UpgradeConfigs: []*hcmv3.HttpConnectionManager_UpgradeConfig{{
 			UpgradeType: "websocket",
 			Enabled:     &wrappers.BoolValue{Value: true},
+			Filters:     upgradeFilters,
 		}},
 		RouteSpecifier: &hcmv3.HttpConnectionManager_Rds{
 			Rds: &hcmv3.Rds{
