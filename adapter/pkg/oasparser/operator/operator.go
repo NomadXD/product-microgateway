@@ -155,7 +155,7 @@ GetXWso2LabelsWebSocket returns a string array of labels provided using extensio
 For web sockets, since we are using the api.yaml file, need to figure out a way
 to pass labels. Currently value "default" is returned
 */
-func GetXWso2LabelsWebSocket(webSocketAPIDef map[string]string) []string {
+func GetXWso2LabelsWebSocket(webSocketAPIDef model.MgwSwagger) []string {
 	return []string{"default"}
 }
 
