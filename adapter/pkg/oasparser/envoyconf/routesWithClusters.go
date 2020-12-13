@@ -82,10 +82,14 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 	// check API level production endpoints available
 	if len(mgwSwagger.GetProdEndpoints()) > 0 {
 		apiLevelEndpointProd = mgwSwagger.GetProdEndpoints()
+		logger.LoggerOasparser.Info(">>>apiLevelEndpointProd:", apiLevelEndpointProd)
 		apilevelAddressP := createAddress(apiLevelEndpointProd[0].Host, apiLevelEndpointProd[0].Port)
+		logger.LoggerOasparser.Info(">>>apilevelAddressP:", apilevelAddressP)
 		apiLevelClusterNameProd = strings.TrimSpace(prodClustersConfigNamePrefix +
 			strings.Replace(mgwSwagger.GetTitle(), " ", "", -1) + mgwSwagger.GetVersion())
+		logger.LoggerOasparser.Info(">>>apiLevelClusterNameProd:", apiLevelClusterNameProd)
 		apilevelClusterProd = createCluster(apilevelAddressP, apiLevelClusterNameProd, apiLevelEndpointProd[0].URLType)
+		logger.LoggerOasparser.Info(">>>apilevelClusterProd:", apilevelClusterProd)
 		clustersProd = append(clustersProd, apilevelClusterProd)
 		endpointsProd = append(endpointsProd, apilevelAddressP)
 
@@ -109,7 +113,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			clusterRefSand := clusterSand.GetName()
 
 			// sandbox endpoints
-			routeS := createRoute(apiTitle, apiBasePath, apiVersion, endpointSand[0], resource, clusterRefSand)
+			routeS := createRoute(apiTitle, apiBasePath, apiVersion, endpointSand[0], resource.GetPath(), resource.GetMethod(), clusterRefSand)
 			routesSand = append(routesSand, routeS)
 			endpointsSand = append(endpointsSand, addressSand)
 
@@ -119,7 +123,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			clusterRefSand := apilevelClusterSand.GetName()
 
 			// sandbox endpoints
-			routeS := createRoute(apiTitle, apiBasePath, apiVersion, endpointSand[0], resource, clusterRefSand)
+			routeS := createRoute(apiTitle, apiBasePath, apiVersion, endpointSand[0], resource.GetPath(), resource.GetMethod(), clusterRefSand)
 			routesSand = append(routesSand, routeS)
 
 		}
@@ -136,7 +140,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			clusterRefProd := clusterProd.GetName()
 
 			// production endpoints
-			routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], resource, clusterRefProd)
+			routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], resource.GetPath(), resource.GetMethod(), clusterRefProd)
 			routesProd = append(routesProd, routeP)
 			endpointsProd = append(endpointsProd, addressProd)
 
@@ -146,12 +150,22 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 			clusterRefProd := apilevelClusterProd.GetName()
 
 			// production endpoints
-			routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], resource, clusterRefProd)
+			routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], resource.GetPath(), resource.GetMethod(), clusterRefProd)
 			routesProd = append(routesProd, routeP)
 
 		} else {
 			logger.LoggerOasparser.Fatalf("Producton endpoints are not defined")
 		}
+	}
+	if mgwSwagger.GetProtocol() == "ws" || mgwSwagger.GetProtocol() == "wss" {
+		apiTitle := mgwSwagger.GetTitle()
+		apiVersion := mgwSwagger.GetVersion()
+		apiBasePath := mgwSwagger.GetXWso2Basepath()
+		endpointProd = apiLevelEndpointProd
+		clusterRefProd := apilevelClusterProd.GetName()
+		methodsArr := []string{"GET"}
+		routeP := createRoute(apiTitle, apiBasePath, apiVersion, endpointProd[0], "", methodsArr, clusterRefProd)
+		routesProd = append(routesProd, routeP)
 	}
 	return routesProd, clustersProd, endpointsProd, routesSand, clustersSand, endpointsSand
 }
@@ -219,7 +233,7 @@ func createCluster(address *corev3.Address, clusterName string, urlType string) 
 }
 
 func createRoute(title string, xWso2Basepath string, version string, endpoint model.Endpoint,
-	resource model.Resource, clusterName string) *routev3.Route {
+	path string, resourceMethods []string, clusterName string) *routev3.Route {
 	logger.LoggerOasparser.Debug("creating a route....")
 	var (
 		router       routev3.Route
@@ -237,11 +251,11 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 						MaxProgramSize: nil,
 					},
 				},
-				Regex: "^(" + strings.Join(resource.GetMethod(), "|") + ")$",
+				Regex: "^(" + strings.Join(resourceMethods, "|") + ")$",
 			},
 		},
 	}
-	resourcePath = resource.GetPath()
+	resourcePath = path
 	routePath := generateRoutePaths(xWso2Basepath, endpoint.Basepath, resourcePath)
 
 	match = &routev3.RouteMatch{
@@ -265,9 +279,16 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 	clusterSpecifier := &routev3.RouteAction_Cluster{
 		Cluster: clusterName,
 	}
-	decorator = &routev3.Decorator{
-		Operation: resourcePath,
+	if resourcePath == "" {
+		decorator = &routev3.Decorator{
+			Operation: " ",
+		}
+	} else {
+		decorator = &routev3.Decorator{
+			Operation: resourcePath,
+		}
 	}
+
 	var contextExtensions = make(map[string]string)
 	contextExtensions["path"] = resourcePath
 	if xWso2Basepath != "" {
@@ -275,7 +296,7 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 	} else {
 		contextExtensions["basePath"] = endpoint.Basepath
 	}
-	contextExtensions["method"] = strings.Join(resource.GetMethod(), " ")
+	contextExtensions["method"] = strings.Join(resourceMethods, " ")
 	contextExtensions["version"] = version
 	contextExtensions["name"] = title
 
