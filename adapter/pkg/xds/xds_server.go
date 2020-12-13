@@ -45,7 +45,7 @@ var (
 	// OpenAPI Name:Version -> openAPI2 struct map
 	openAPIV2Map map[string]openAPI2.Swagger
 	// WebSocketAPI Name:Version -> [apiName:foo, ver]
-	webSocketAPIMap map[string]map[string]string
+	webSocketAPIMap map[string]model.MgwSwagger
 	// OpenAPI Name:Version -> Envoy Label Array map
 	openAPIEnvoyMap map[string][]string
 	// OpenAPI Name:Version -> Envoy Routes map
@@ -79,7 +79,7 @@ func init() {
 	cache = cachev3.NewSnapshotCache(false, IDHash{}, nil)
 	openAPIV3Map = make(map[string]openAPI3.Swagger)
 	openAPIV2Map = make(map[string]openAPI2.Swagger)
-	webSocketAPIMap = make(map[string]map[string]string)
+	webSocketAPIMap = make(map[string]model.MgwSwagger)
 	openAPIEnvoyMap = make(map[string][]string)
 	openAPIRoutesMap = make(map[string][]*routev3.Route)
 	openAPIClustersMap = make(map[string][]*clusterv3.Cluster)
@@ -146,19 +146,19 @@ func UpdateEnvoy(byteArr []byte, apiType string) {
 		}
 
 	} else if apiType == model.WS {
-		webSocketAPIDef := operator.GetWebSocketAPIDef(byteArr)
-		logger.LoggerXds.Info(webSocketAPIDef)
-		apiMapKey = webSocketAPIDef["apiName"] + ":" + webSocketAPIDef["version"]
+		mgwSwagger := operator.GetMgwSwaggerWebSocket(byteArr)
+		logger.LoggerXds.Info(mgwSwagger)
+		apiMapKey = mgwSwagger.GetTitle() + ":" + mgwSwagger.GetVersion()
 		logger.LoggerXds.Info(apiMapKey)
 		existingWebSocketAPI, ok := webSocketAPIMap[apiMapKey]
 		if ok {
-			if reflect.DeepEqual(webSocketAPIDef, existingWebSocketAPI) {
+			if reflect.DeepEqual(mgwSwagger, existingWebSocketAPI) {
 				logger.LoggerXds.Info("No changes to apply for the WebSocketAPI with key: %v", apiMapKey)
 				return
 			}
 		}
-		webSocketAPIMap[apiMapKey] = webSocketAPIDef
-		newLabels = operator.GetXWso2LabelsWebSocket(webSocketAPIDef)
+		webSocketAPIMap[apiMapKey] = mgwSwagger
+		newLabels = operator.GetXWso2LabelsWebSocket(mgwSwagger)
 		logger.LoggerXds.Info(newLabels)
 
 	}
