@@ -257,19 +257,36 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 	}
 	resourcePath = path
 	routePath := generateRoutePaths(xWso2Basepath, endpoint.Basepath, resourcePath)
+	if endpoint.URLType == "ws" || endpoint.URLType == "wss" {
 
-	match = &routev3.RouteMatch{
-		PathSpecifier: &routev3.RouteMatch_SafeRegex{
-			SafeRegex: &envoy_type_matcherv3.RegexMatcher{
-				EngineType: &envoy_type_matcherv3.RegexMatcher_GoogleRe2{
-					GoogleRe2: &envoy_type_matcherv3.RegexMatcher_GoogleRE2{
-						MaxProgramSize: nil,
-					},
-				},
-				Regex: routePath,
+		match = &routev3.RouteMatch{
+			PathSpecifier: &routev3.RouteMatch_Prefix{
+				Prefix: xWso2Basepath,
 			},
-		},
-		Headers: []*routev3.HeaderMatcher{&headerMatcherArray},
+		}
+
+		decorator = &routev3.Decorator{
+			Operation: xWso2Basepath,
+		}
+
+	} else {
+		match = &routev3.RouteMatch{
+			PathSpecifier: &routev3.RouteMatch_SafeRegex{
+				SafeRegex: &envoy_type_matcherv3.RegexMatcher{
+					EngineType: &envoy_type_matcherv3.RegexMatcher_GoogleRe2{
+						GoogleRe2: &envoy_type_matcherv3.RegexMatcher_GoogleRE2{
+							MaxProgramSize: nil,
+						},
+					},
+					Regex: routePath,
+				},
+			},
+			Headers: []*routev3.HeaderMatcher{&headerMatcherArray},
+		}
+
+		decorator = &routev3.Decorator{
+			Operation: resourcePath,
+		}
 	}
 
 	hostRewriteSpecifier := &routev3.RouteAction_HostRewriteLiteral{
@@ -279,15 +296,15 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 	clusterSpecifier := &routev3.RouteAction_Cluster{
 		Cluster: clusterName,
 	}
-	if resourcePath == "" {
-		decorator = &routev3.Decorator{
-			Operation: " ",
-		}
-	} else {
-		decorator = &routev3.Decorator{
-			Operation: resourcePath,
-		}
-	}
+	// if resourcePath == "" {
+	// 	decorator = &routev3.Decorator{
+	// 		Operation: " ",
+	// 	}
+	// } else {
+	// 	decorator = &routev3.Decorator{
+	// 		Operation: resourcePath,
+	// 	}
+	// }
 
 	var contextExtensions = make(map[string]string)
 	contextExtensions["path"] = resourcePath
@@ -315,26 +332,39 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 		TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute",
 		Value:   b.Bytes(),
 	}
-
 	if xWso2Basepath != "" {
-		action = &routev3.Route_Route{
-			Route: &routev3.RouteAction{
-				HostRewriteSpecifier: hostRewriteSpecifier,
-				// TODO: (VirajSalaka) Provide prefix rewrite since it is simple
-				RegexRewrite: &envoy_type_matcherv3.RegexMatchAndSubstitute{
-					Pattern: &envoy_type_matcherv3.RegexMatcher{
-						EngineType: &envoy_type_matcherv3.RegexMatcher_GoogleRe2{
-							GoogleRe2: &envoy_type_matcherv3.RegexMatcher_GoogleRE2{
-								MaxProgramSize: nil,
-							},
-						},
-						Regex: xWso2Basepath,
-					},
-					Substitution: endpoint.Basepath,
+		if endpoint.URLType == "ws" || endpoint.URLType == "wss" {
+			if endpoint.Basepath == "" {
+				endpoint.Basepath = "/"
+			}
+			action = &routev3.Route_Route{
+				Route: &routev3.RouteAction{
+					HostRewriteSpecifier: hostRewriteSpecifier,
+					PrefixRewrite:        endpoint.Basepath,
+					ClusterSpecifier:     clusterSpecifier,
 				},
-				ClusterSpecifier: clusterSpecifier,
-			},
+			}
+		} else {
+			action = &routev3.Route_Route{
+				Route: &routev3.RouteAction{
+					HostRewriteSpecifier: hostRewriteSpecifier,
+					// TODO: (VirajSalaka) Provide prefix rewrite since it is simple
+					RegexRewrite: &envoy_type_matcherv3.RegexMatchAndSubstitute{
+						Pattern: &envoy_type_matcherv3.RegexMatcher{
+							EngineType: &envoy_type_matcherv3.RegexMatcher_GoogleRe2{
+								GoogleRe2: &envoy_type_matcherv3.RegexMatcher_GoogleRE2{
+									MaxProgramSize: nil,
+								},
+							},
+							Regex: xWso2Basepath,
+						},
+						Substitution: endpoint.Basepath,
+					},
+					ClusterSpecifier: clusterSpecifier,
+				},
+			}
 		}
+
 	} else {
 		action = &routev3.Route_Route{
 			Route: &routev3.RouteAction{
