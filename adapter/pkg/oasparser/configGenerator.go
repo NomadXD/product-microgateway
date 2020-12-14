@@ -34,13 +34,14 @@ import (
 // when the openAPI Json is provided.
 func GetProductionRoutesClustersEndpoints(byteArr []byte, apiType string) ([]*routev3.Route, []*clusterv3.Cluster, []*corev3.Address) {
 	var mgwSwagger model.MgwSwagger
+	// Check for API type and create mgwSwagger. mgwSwagger object creation is different for
+	// HTTP and WS since HTTP uses swagger.yaml and WS uses api.yaml.
 	if apiType == model.HTTP {
 		mgwSwagger = operator.GetMgwSwagger(byteArr)
 	} else if apiType == model.WS {
 		mgwSwagger = operator.GetMgwSwaggerWebSocket(byteArr)
-		loggers.LoggerOasparser.Info(mgwSwagger)
 	} else {
-		panic("Unsupported API type")
+		loggers.LoggerOasparser.Errorf("API type not currently supported")
 	}
 
 	routes, clusters, endpoints, _, _, _ := envoy.CreateRoutesWithClusters(mgwSwagger)

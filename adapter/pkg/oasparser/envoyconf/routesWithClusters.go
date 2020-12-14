@@ -83,14 +83,10 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger) (routesP []*routev3.R
 	// check API level production endpoints available
 	if len(mgwSwagger.GetProdEndpoints()) > 0 {
 		apiLevelEndpointProd = mgwSwagger.GetProdEndpoints()
-		logger.LoggerOasparser.Info(">>>apiLevelEndpointProd:", apiLevelEndpointProd)
 		apilevelAddressP := createAddress(apiLevelEndpointProd[0].Host, apiLevelEndpointProd[0].Port)
-		logger.LoggerOasparser.Info(">>>apilevelAddressP:", apilevelAddressP)
 		apiLevelClusterNameProd = strings.TrimSpace(prodClustersConfigNamePrefix +
 			strings.Replace(mgwSwagger.GetTitle(), " ", "", -1) + mgwSwagger.GetVersion())
-		logger.LoggerOasparser.Info(">>>apiLevelClusterNameProd:", apiLevelClusterNameProd)
 		apilevelClusterProd = createCluster(apilevelAddressP, apiLevelClusterNameProd, apiLevelEndpointProd[0].URLType)
-		logger.LoggerOasparser.Info(">>>apilevelClusterProd:", apilevelClusterProd)
 		clustersProd = append(clustersProd, apilevelClusterProd)
 		endpointsProd = append(endpointsProd, apilevelAddressP)
 
@@ -258,6 +254,7 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 	}
 	resourcePath = path
 	routePath := generateRoutePaths(xWso2Basepath, endpoint.Basepath, resourcePath)
+	// For WebSocket routes, prefix match is to enable relative paths for the upstream cluster.
 	if endpoint.URLType == "ws" || endpoint.URLType == "wss" {
 
 		match = &routev3.RouteMatch{
@@ -297,15 +294,6 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 	clusterSpecifier := &routev3.RouteAction_Cluster{
 		Cluster: clusterName,
 	}
-	// if resourcePath == "" {
-	// 	decorator = &routev3.Decorator{
-	// 		Operation: " ",
-	// 	}
-	// } else {
-	// 	decorator = &routev3.Decorator{
-	// 		Operation: resourcePath,
-	// 	}
-	// }
 
 	var contextExtensions = make(map[string]string)
 	contextExtensions["path"] = resourcePath
@@ -334,10 +322,11 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 		Value:   b.Bytes(),
 	}
 	if xWso2Basepath != "" {
+		// For WebSocket routes prefix rewrite is used as the action.
 		if endpoint.URLType == "ws" || endpoint.URLType == "wss" {
-			if endpoint.Basepath == "" {
-				endpoint.Basepath = "/"
-			}
+			// if endpoint.Basepath == "" {
+			// 	endpoint.Basepath = "/"
+			// }
 			action = &routev3.Route_Route{
 				Route: &routev3.RouteAction{
 					HostRewriteSpecifier: hostRewriteSpecifier,
@@ -362,6 +351,7 @@ func createRoute(title string, xWso2Basepath string, version string, endpoint mo
 						Substitution: endpoint.Basepath,
 					},
 					ClusterSpecifier: clusterSpecifier,
+					// Upgrade disabled for http routes.
 					UpgradeConfigs: []*routev3.RouteAction_UpgradeConfig{{
 						UpgradeType: "websocket",
 						Enabled:     &wrappers.BoolValue{Value: false},

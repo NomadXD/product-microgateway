@@ -136,19 +136,26 @@ func setOperationSwagger(path string, methods []string, pathItem spec.PathItem) 
 SetInfoSwaggerWebSocket populates the mgwSwagger object for web sockets
 */
 func (swagger *MgwSwagger) SetInfoSwaggerWebSocket(apiData map[string]interface{}) {
+	// UUID in the generated api.yaml file is considerd as swagger.id
 	swagger.id = apiData["uuid"].(string)
+	// Assigns a default value to swaggerVersion since swagger version is not related to web sockets.
 	swagger.swaggerVersion = "WS"
+	// apiName and version in api.yaml corresponds to title and version respectively.
 	info := apiData["id"].(map[string]interface{})
 	swagger.title = info["apiName"].(string)
 	swagger.version = info["version"].(string)
+	// context value in api.yaml is assigned as xWso2Basepath
 	swagger.xWso2Basepath = apiData["context"].(string)
+	// productionURL & sandBoxURL values are extracted from endpointConfig nested json value in api.yaml
 	endpointConfig := apiData["endpointConfig"].(string)
 	productionURL := gjson.Get(endpointConfig, "production_endpoints.url")
 	sandBoxURL := gjson.Get(endpointConfig, "sandbox_endpoints.url")
+	// productionURL & sandBoxURL values are passed get their respective Endpoint objects
 	productionEndpoint := getHostandBasepathandPortWebSocket(productionURL.String())
 	sandBoxEndpoint := getHostandBasepathandPortWebSocket(sandBoxURL.String())
 	swagger.productionUrls = append(swagger.productionUrls, productionEndpoint)
 	swagger.sandboxUrls = append(swagger.sandboxUrls, sandBoxEndpoint)
+	// swagger protocol value assigned by refering to the production endpoint url type
 	if productionEndpoint.URLType == "ws" {
 		swagger.protocol = "ws"
 	} else if productionEndpoint.URLType == "wss" {

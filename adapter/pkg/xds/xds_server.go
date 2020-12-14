@@ -44,7 +44,7 @@ var (
 	openAPIV3Map map[string]openAPI3.Swagger
 	// OpenAPI Name:Version -> openAPI2 struct map
 	openAPIV2Map map[string]openAPI2.Swagger
-	// WebSocketAPI Name:Version -> [apiName:foo, ver]
+	// WebSocketAPI Name:Version -> mgwSwagger
 	webSocketAPIMap map[string]model.MgwSwagger
 	// OpenAPI Name:Version -> Envoy Label Array map
 	openAPIEnvoyMap map[string][]string
@@ -104,6 +104,7 @@ func UpdateEnvoy(byteArr []byte, apiType string) {
 	var l sync.Mutex
 	l.Lock()
 	defer l.Unlock()
+	// Checking the API type and executing the relevant if block
 	if apiType == model.HTTP {
 		openAPIVersion, jsonContent, err := operator.GetOpenAPIVersionAndJSONContent(byteArr)
 		if err != nil {
@@ -147,9 +148,7 @@ func UpdateEnvoy(byteArr []byte, apiType string) {
 
 	} else if apiType == model.WS {
 		mgwSwagger := operator.GetMgwSwaggerWebSocket(byteArr)
-		logger.LoggerXds.Info(mgwSwagger)
 		apiMapKey = mgwSwagger.GetTitle() + ":" + mgwSwagger.GetVersion()
-		logger.LoggerXds.Info(apiMapKey)
 		existingWebSocketAPI, ok := webSocketAPIMap[apiMapKey]
 		if ok {
 			if reflect.DeepEqual(mgwSwagger, existingWebSocketAPI) {
@@ -159,8 +158,11 @@ func UpdateEnvoy(byteArr []byte, apiType string) {
 		}
 		webSocketAPIMap[apiMapKey] = mgwSwagger
 		newLabels = operator.GetXWso2LabelsWebSocket(mgwSwagger)
-		logger.LoggerXds.Info(newLabels)
 
+	} else {
+		// Unreachable else block. This won't be executed since API type is validated in the switch case in file_read_utils.go.
+		// Added for better debugging if switch case gets modified in file_read_utils.
+		logger.LoggerXds.Errorf("API type is not currently supported")
 	}
 	logger.LoggerXds.Infof("Added/Updated the content under OpenAPI Key : %v", apiMapKey)
 	logger.LoggerXds.Debugf("Newly added labels for the OpenAPI Key : %v are %v", apiMapKey, newLabels)

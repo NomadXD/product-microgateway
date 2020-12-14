@@ -44,6 +44,7 @@ func getHTTPFilters() []*hcmv3.HttpFilter {
 	return httpFilters
 }
 
+// UpgradeFilters that are applied in websocket upgrade mode
 func getUpgradeFilters() []*hcmv3.HttpFilter {
 	extAauth := getExtAuthzHTTPFilter()
 	router := getRouterHTTPFilter()

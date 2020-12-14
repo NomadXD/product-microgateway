@@ -94,8 +94,8 @@ func ApplyAPIProject(payload []byte) error {
 	case model.WS:
 		xds.UpdateEnvoy(apiJSON, model.WS)
 	default:
-		loggers.LoggerAPI.Error("API type is not currently supported with the micro-gateway")
-		return errors.New("API type is not currently supported with the micro-gateway")
+		loggers.LoggerAPI.Error("API type is not currently supported")
+		return errors.New("API type is not currently supported")
 	}
 	return nil
 }
