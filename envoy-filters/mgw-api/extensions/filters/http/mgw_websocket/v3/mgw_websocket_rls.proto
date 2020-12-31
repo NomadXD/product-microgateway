@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.mgw_websocket.v3;
+
+import "udpa/annotations/status.proto";
+import "envoy/config/ratelimit/v3/rls.proto";
+import "validate/validate.proto";
+
+import "google/protobuf/duration.proto";
+
+option java_package = "org.wso2.micro.gateway.enforcer.ratelimit.websocket";
+option java_outer_classname = "MgwWebsocketProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+message RateLimitRequest{
+    string domain = 1;
+
+    repeated RateLimitDescriptor descriptors = 2;
+
+}
+
+message RateLimitResponse{
+
+    enum Code {
+        // The response code is not known.
+        UNKNOWN = 0;
+        // The response code to notify that the number of requests are under limit.
+        OK = 1;
+        // The response code to notify that the number of requests are over limit.
+        OVER_LIMIT = 2;
+    }
+
+    Code overall_code = 1;
+    
+}
+
+message RateLimitDescriptor{
+    // Descriptor key.
+    string key = 1 [(validate.rules).string = {min_len:1}];
+
+    // Descriptor value.
+    string value = 2 [(validate.rules).string = {min_len: 1}];
+}
+
+service RateLimitService{
+    rpc ShouldRateLimit(RateLimitRequest) returns (RateLimitResponse){
+
+    }
+}
