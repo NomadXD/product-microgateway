@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.mgw_websocket.v3;
+
+import "udpa/annotations/status.proto";
+import "envoy/config/ratelimit/v3/rls.proto";
+import "validate/validate.proto";
+
+import "google/protobuf/duration.proto";
+
+// option java_package = "org.wso2.micro.gateway.enforcer.ratelimit.websocket";
+// option java_outer_classname = "MgwWebsocketProto";
+// option java_multiple_files = true;
+// option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+message RateLimit{
+    // The rate limit domain to use when calling the rate limit service.
+    string domain = 1 [(validate.rules).string = {min_len: 1}];
+
+    // The ratelimit type the filter should apply. Supported types are *downstream*, *upstream* or *default*.
+    // If no value is specified, the filter will be configured to default value. 
+    // downstream - rate limit applied only to web socket frames emitted by the downstream .
+    // upstream - rate limit applied only to web socket frames emitted by the upstream.
+    // default - rate limit applied to both downstream and upstream .
+    string ratelimit_type = 2 [(validate.rules).string = {in:["downstream", "upstream", "", "default"]}];
+
+    // The timeout in milliseconds for the rate limit service RPC. If not
+    // set, this defaults to 20ms.
+    google.protobuf.Duration timeout = 3;
+
+    // The filter's behaviour in case the rate limiting service does
+    // not respond back. When it is set to true, Envoy will not allow traffic in case of
+    // communication failure between rate limiting service and the proxy.
+    bool failure_mode_deny = 4;
+
+    // Configuration for an external rate limit service provider.
+    envoy.config.ratelimit.v3.RateLimitServiceConfig rate_limit_service = 5 [(validate.rules).message = {required: true}];
+}
