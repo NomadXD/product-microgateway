@@ -45,7 +45,7 @@ public:
     */
     virtual void cancel() PURE;
 
-    virtual void limit(RequestCallbacks& callbacks, const std::string& domain,
+    virtual void limit(RequestCallbacks& callbacks, const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context,
                         Tracing::Span& parent_span, const StreamInfo::StreamInfo& stream_info) PURE;
 
 };

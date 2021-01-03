@@ -34,11 +34,11 @@ public:
   ~GrpcClientImpl() override;
 
   static void createRequest(envoy::extensions::filters::http::mgw_websocket::v3::RateLimitRequest& request,
-                            const std::string& domain);
+                            const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context);
 
   // Filters::Common::RateLimit::Client
   void cancel() override;
-  void limit(RequestCallbacks& callbacks, const std::string& domain,
+  void limit(RequestCallbacks& callbacks, const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context,
              Tracing::Span& parent_span, const StreamInfo::StreamInfo& stream_info) override;
 
   // Grpc::AsyncRequestCallbacks

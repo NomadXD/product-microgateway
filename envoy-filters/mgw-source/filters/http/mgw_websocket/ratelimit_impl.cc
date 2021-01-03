@@ -1,5 +1,7 @@
 #include "mgw-source/filters/http/mgw_websocket/ratelimit_impl.h"
 #include "envoy/server/filter_config.h"
+#include "mgw-api/extensions/filters/http/mgw_websocket/v3/mgw_websocket_rls.pb.h"
+#include <string>
 
 namespace Envoy{
 namespace Extensions{
@@ -18,14 +20,19 @@ GrpcClientImpl::GrpcClientImpl(Grpc::RawAsyncClientPtr&& async_client,
 GrpcClientImpl::~GrpcClientImpl() { ASSERT(!callbacks_); }
 
 void GrpcClientImpl::cancel() {
-  ASSERT(callbacks_ != nullptr);
+  //ASSERT(callbacks_ != nullptr);
   request_->cancel();
   callbacks_ = nullptr;
 }
 
 void GrpcClientImpl::createRequest(envoy::extensions::filters::http::mgw_websocket::v3::RateLimitRequest& request,
-                            const std::string& domain) {
+                            const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) {
+  
   request.set_domain(domain);
+  //google::protobuf::Struct* pointer = &metadata;
+  ;
+  auto metadata_ctx = request.mutable_metadata_context();
+  *metadata_ctx = std::move(metadata_context);
 //   for (const envoy::extensions::filters::http::mgw_websocket::v3::RateLimitDescriptor& descriptor : descriptors) {
 //     envoy::extensions::common::ratelimit::v3::RateLimitDescriptor* new_descriptor =
 //         request.add_descriptors();
@@ -44,13 +51,17 @@ void GrpcClientImpl::createRequest(envoy::extensions::filters::http::mgw_websock
 //   }
 }
 
-void GrpcClientImpl::limit(RequestCallbacks& callbacks, const std::string& domain,
+void GrpcClientImpl::limit(RequestCallbacks& callbacks, const std::string& domain,envoy::config::core::v3::Metadata&& metadata_context,
                            Tracing::Span& parent_span, const StreamInfo::StreamInfo&) {
-  ASSERT(callbacks_ == nullptr);
+  //ASSERT(callbacks_ == nullptr);
+  if (callbacks_ != nullptr){
+    ENVOY_LOG(trace, "Existing callback >>>>>>>>>>>");
+  }
+
   callbacks_ = &callbacks;
 
   envoy::extensions::filters::http::mgw_websocket::v3::RateLimitRequest request;
-  createRequest(request, domain);
+  createRequest(request, domain, std::move(metadata_context));
 
   request_ =
       async_client_->send(service_method_, request, *this, parent_span,
@@ -61,6 +72,7 @@ void GrpcClientImpl::limit(RequestCallbacks& callbacks, const std::string& domai
 void GrpcClientImpl::onSuccess(
     std::unique_ptr<envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse>&& response,
     Tracing::Span& span) {
+      ENVOY_LOG(trace, "On Success called >>>>>>>>>>>>");
   LimitStatus status = LimitStatus::OK;
   ASSERT(response->overall_code() != envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse::UNKNOWN);
   if (response->overall_code() == envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse::OVER_LIMIT) {

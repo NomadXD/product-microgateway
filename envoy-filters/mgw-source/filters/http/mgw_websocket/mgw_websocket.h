@@ -99,7 +99,7 @@ Http::StreamDecoderFilterCallbacks* callbacks_{};
 ClientPtr client_;
 //Http::ResponseHeaderMapPtr response_headers_to_add_;
 //Http::RequestHeaderMap* request_headers_{};
-void initiateCall();
+void initiateCall(envoy::config::core::v3::Metadata&& metadata_context);
 };
 
 
