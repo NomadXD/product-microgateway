@@ -12,7 +12,8 @@ namespace HttpFilters{
 namespace MgwWebSocket{
 
 void MgwWebSocketFilter::initiateCall(envoy::config::core::v3::Metadata&& metadata_context){
-      client_ -> limit(*this, config_->domain(), std::move(metadata_context), callbacks_->activeSpan(), callbacks_-> streamInfo());
+      ENVOY_LOG(trace, "initiate call called");
+      client_ -> limit(*this, config_->domain(), std::move(metadata_context));
 
 }
 
@@ -23,14 +24,14 @@ void MgwWebSocketFilter::complete(LimitStatus status){
 
 Http::FilterHeadersStatus MgwWebSocketFilter::decodeHeaders(Http::RequestHeaderMap&, bool) {
     ENVOY_LOG(trace, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>decodeHeaders called");
-    ProtobufWkt::Struct metadata;
-    auto& fields = *metadata.mutable_fields();
-    const std::string key{"key"};
-    const std::string value{"value"};
-    *fields[key]
-         .mutable_string_value() = value;
-    const std::string filter{"envoy.filters.http.mgw_websocket"};
-    callbacks_->streamInfo().setDynamicMetadata(filter, metadata);
+    // ProtobufWkt::Struct metadata;
+    // auto& fields = *metadata.mutable_fields();
+    // const std::string key{"key"};
+    // const std::string value{"value"};
+    // *fields[key]
+    //      .mutable_string_value() = value;
+    // const std::string filter{"envoy.filters.http.mgw_websocket"};
+    // callbacks_->streamInfo().setDynamicMetadata(filter, metadata);
     // //callbacks_->connection()->streamInfo()->setDynamicMetaData();
     // ENVOY_STREAM_LOG(trace, "metadata header:{}", *callbacks_);
     return Http::FilterHeadersStatus::Continue;
@@ -42,9 +43,9 @@ Http::FilterHeadersStatus MgwWebSocketFilter::decodeHeaders(Http::RequestHeaderM
 }
 
 Http::FilterDataStatus MgwWebSocketFilter::decodeData(Buffer::Instance&, bool) { 
-    const auto metadata = callbacks_->streamInfo().dynamicMetadata().filter_metadata();
-    const auto ext_auth_metadata = metadata.find("envoy.filters.http.ext_authz");
-    google::protobuf::Struct keysm = ext_auth_metadata->second;
+    //const auto metadata = callbacks_->streamInfo().dynamicMetadata().filter_metadata();
+    //const auto ext_auth_metadata = metadata.find("envoy.filters.http.ext_authz");
+    //google::protobuf::Struct keysm = ext_auth_metadata->second;
     //const ProtobufWkt::Struct& keys = ext_auth_metadata->second;
     envoy::config::core::v3::Metadata metadata_context;
     const auto& request_metadata = callbacks_->streamInfo().dynamicMetadata().filter_metadata();
@@ -128,7 +129,6 @@ void MgwWebSocketFilter::onDestroy() {
 //     state_ = State::Complete;
 //     client_->cancel();
 //   }
-  client_->cancel();
 
 
 

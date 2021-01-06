@@ -65,8 +65,9 @@ static RateLimitType stringToType(const std::string& rate_limit_type){
 using FilterConfigSharedPtr = std::shared_ptr<FilterConfig>;
 
 class MgwWebSocketFilter : public Http::StreamFilter, 
-                           public Logger::Loggable<Logger::Id::filter>,
-                           public RequestCallbacks{
+                           public Logger::Loggable<Logger::Id::filter>, 
+                           RequestCallbacks
+                           {
 
 public:
     MgwWebSocketFilter(FilterConfigSharedPtr config, ClientPtr&& client)
@@ -90,8 +91,9 @@ public:
 
   void onDestroy() override;
 
-  // RateLimit::RequestCallbacks
   void complete(LimitStatus status) override;
+
+
 
 private:
 FilterConfigSharedPtr config_;

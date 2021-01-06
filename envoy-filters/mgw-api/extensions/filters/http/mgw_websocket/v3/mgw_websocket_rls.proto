@@ -52,4 +52,8 @@ service RateLimitService{
     rpc ShouldRateLimit(RateLimitRequest) returns (RateLimitResponse){
 
     }
+
+    rpc ShouldRateLimitStream(stream RateLimitRequest) returns (stream RateLimitResponse){
+
+    }
 }
