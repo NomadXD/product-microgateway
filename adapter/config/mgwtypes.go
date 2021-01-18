@@ -62,21 +62,21 @@ func NewReceiver() chan string {
 // Config represents the adapter configuration.
 // It is created directly from the configuration toml file.
 type Config struct {
-
-	// Server represents the configuration related to rest API (to which the apictl requests)
-	Server struct {
-		// Host name of the server
-		Host string
-		// Port of the server
-		Port string
-		// Public Certificate Path (For the https connection between adapter and apictl)
-		PublicKeyPath string
-		// Private Key Path (For the https connection between adapter and apictl)
-		PrivateKeyPath string
-		// Username credential
-		Username string
-		// Password credential
-		Password string
+	//Adapter related Configurations
+	Adapter struct {
+		// Server represents the configuration related to rest API (to which the apictl requests)
+		Server struct {
+			// Host name of the server
+			Host string
+			// Port of the server
+			Port string
+			// Public Certificate Path (For the https connection between adapter and apictl)
+			PublicKeyPath string
+			// Private Key Path (For the https connection between adapter and apictl)
+			PrivateKeyPath string
+			// APICTL Users
+			Users []APICtlUser `toml:"users"`
+		}
 	}
 
 	// Envoy Listener Component related configurations.
@@ -87,5 +87,26 @@ type Config struct {
 		ListenerCertPath        string
 		ListenerKeyPath         string
 		ListenerTLSEnabled      bool
+
+		// Envoy Upstream Related Connfigurations
+		Upstream struct {
+			//UpstreamTLS related Configuration
+			TLS struct {
+				MinVersion             string `toml:"minimumProtocolVersion"`
+				MaxVersion             string `toml:"maximumProtocolVersion"`
+				Ciphers                string `toml:"ciphers"`
+				CACrtPath              string `toml:"trustedCertificatesFilePath"`
+				PrivateKeyPath         string `toml:"clientKeyPath"`
+				PublicCertPath         string `toml:"clientCertPath"`
+				VerifyHostName         bool   `toml:"verifyHostName"`
+				DisableSSLVerification bool   `toml:"disableSslVerification"`
+			}
+		}
 	}
+}
+
+// APICtlUser represents registered APICtl Users
+type APICtlUser struct {
+	Username string
+	Password string
 }
