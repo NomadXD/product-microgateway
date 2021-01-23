@@ -35,13 +35,12 @@ Http::FilterFactoryCb MgwWebSocketFilterConfig::createFilterFactoryFromProtoType
                         context, proto_config.rate_limit_service().grpc_service(), timeout,
                         proto_config.rate_limit_service().transport_api_version())));
     };
-    
-
-
 };
 
+// TODO (LahiruUdayanga) - createRouteSpecificFilterConfigTyped() for mgw_websocket
+
 /**
- * Static registration for the rate limit filter. @see RegisterFactory.
+ * Static registration for the mgw_websocket.
  */
 REGISTER_FACTORY(MgwWebSocketFilterConfig,
                  Server::Configuration::NamedHttpFilterConfigFactory){"envoy.mgw_websocket"};

@@ -9,7 +9,8 @@ envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
     deps = [
-        "//mgw-source/filters/http/mgw:config",
+        #"//mgw-source/filters/http/mgw:config",
+        "//mgw-source/filters/http/mgw_websocket:config",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )

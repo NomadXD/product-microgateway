@@ -19,7 +19,7 @@ enum class LimitStatus{
     // The rate limit service could not be queried.
     Error,
     // The request is over limit.
-    OverLimit
+    OverLimit,
 };
 
 
@@ -43,7 +43,7 @@ public:
     /**
     * Cancel an inflight limit request.
     */
-    //virtual void cancel() PURE;
+    virtual void cancel() PURE;
 
     virtual void limit(RequestCallbacks& callbacks,const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) PURE;
 

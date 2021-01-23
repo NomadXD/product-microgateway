@@ -37,7 +37,7 @@ public:
   //                           const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context);
 
   // Filters::Common::RateLimit::Client
-  //void cancel() override;
+  void cancel() override;
   void limit(RequestCallbacks& callbacks,const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) override;
 
   // Grpc::AsyncStreamCallbacks

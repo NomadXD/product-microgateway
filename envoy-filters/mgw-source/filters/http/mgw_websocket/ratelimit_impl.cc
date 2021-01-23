@@ -19,97 +19,47 @@ GrpcClientImpl::GrpcClientImpl(Grpc::RawAsyncClientPtr&& async_client,
 
 GrpcClientImpl::~GrpcClientImpl() {  }
 
-// void GrpcClientImpl::cancel() {
-//   ENVOY_LOG(trace, "Cancel");
-//   //ASSERT(callbacks_ != nullptr);
-//   // request_->cancel();
-//   // callbacks_ = nullptr;
-// }
+void GrpcClientImpl::cancel() {
+  ENVOY_LOG(trace, "Cancel");
+  callbacks_ = nullptr;
+  stream_->closeStream();
+}
 
-// void GrpcClientImpl::createRequest(envoy::extensions::filters::http::mgw_websocket::v3::RateLimitRequest& request,
-//                             const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) {
-  
-//   request.set_domain(domain);
-//   //google::protobuf::Struct* pointer = &metadata;
-//   ;
-//   auto metadata_ctx = request.mutable_metadata_context();
-//   *metadata_ctx = std::move(metadata_context);
-// //   for (const envoy::extensions::filters::http::mgw_websocket::v3::RateLimitDescriptor& descriptor : descriptors) {
-// //     envoy::extensions::common::ratelimit::v3::RateLimitDescriptor* new_descriptor =
-// //         request.add_descriptors();
-// //     for (const Envoy::RateLimit::DescriptorEntry& entry : descriptor.entries_) {
-// //       envoy::extensions::common::ratelimit::v3::RateLimitDescriptor::Entry* new_entry =
-// //           new_descriptor->add_entries();
-// //       new_entry->set_key(entry.key_);
-// //       new_entry->set_value(entry.value_);
-// //     }
-// //     if (descriptor.limit_) {
-// //       envoy::extensions::common::ratelimit::v3::RateLimitDescriptor_RateLimitOverride* new_limit =
-// //           new_descriptor->mutable_limit();
-// //       new_limit->set_requests_per_unit(descriptor.limit_.value().requests_per_unit_);
-// //       new_limit->set_unit(descriptor.limit_.value().unit_);
-// //     }
-// //   }
-// }
 
 void GrpcClientImpl::limit(RequestCallbacks& callbacks,const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) {
 
-  ENVOY_LOG(trace, "inside limit");
-  //createRequest(message, domain, std::move(metadata_context));
   callbacks_= &callbacks;
-  ENVOY_LOG(trace, "before establish new stream");
-  //establishNewStream();
-  ENVOY_LOG(trace, "after establish string");
   message_.set_domain(domain);
-  ENVOY_LOG(trace, "after set domain");
   auto metadata_ctx = message_.mutable_metadata_context();
-  ENVOY_LOG(trace, "after metadata ctx");
   *metadata_ctx = std::move(metadata_context);
-  ENVOY_LOG(trace,"after move");
   if(stream_ != nullptr){
-        ENVOY_LOG(trace, "before send message");
-        ENVOY_LOG(trace, transport_api_version_);
-        stream_->sendMessage(message_, transport_api_version_,false);
-        message_.Clear();
-        ENVOY_LOG(trace, "after send message");
+    ENVOY_LOG(trace, "gRPC bidi stream exist for service method: {}", service_method_.DebugString());
+    stream_->sendMessage(message_, transport_api_version_,false);
+    message_.Clear();
+    ENVOY_LOG(trace, "message successfully sent through gRPC bidi stream with service method : {}", service_method_.DebugString());
   }else{
-        ENVOY_LOG(trace, "Error sending the message");
-        stream_ = async_client_->start(service_method_, *this, Http::AsyncClient::StreamOptions());
-        stream_->sendMessage(message_, transport_api_version_,false);
-        message_.Clear();
+    ENVOY_LOG(trace, "initializing gRPC bidi stream for service method : {}", service_method_.DebugString());
+    stream_ = async_client_->start(service_method_, *this, Http::AsyncClient::StreamOptions());
+    stream_->sendMessage(message_, transport_api_version_,false);
+    message_.Clear();
+    ENVOY_LOG(trace, "message successfully sent through gRPC bidi stream with service method : {}", service_method_.DebugString());
   }
-  
-  ENVOY_LOG(trace, "after meesage clearedd");
-  
 }
 
-// void GrpcClientImpl::onCreateInitialMetadata(Http::RequestHeaderMap&) {
-//   ENVOY_LOG(trace, "onCreateInitialMetadata");
-// };
-
-// void GrpcClientImpl::onReceiveInitialMetadata(Http::ResponseHeaderMapPtr&&) {
-//   ENVOY_LOG(trace, "onReceiveInitialMetadata");
-// };
-
 void GrpcClientImpl::onReceiveMessage(std::unique_ptr<envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse>&& response) {
-      ENVOY_LOG(trace, "onReceiveMessage");
-      LimitStatus status = LimitStatus::OK;
-      if (response->overall_code() == envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse::OVER_LIMIT) {
-    status = LimitStatus::OverLimit;
-    
+  ENVOY_LOG(trace, "onReceiveMessage invoked for gRPC bidi stream with service method : {}", service_method_.DebugString());
+  if (response->overall_code() == envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse::OVER_LIMIT) {
+    callbacks_->complete(LimitStatus::OverLimit);
   } else {
-          status = LimitStatus::OK;
-          ENVOY_LOG(trace, "onReceiveMessage");
-
+    callbacks_->complete(LimitStatus::OK);
   }
 };
-// void GrpcClientImpl::onReceiveTrailingMetadata(Http::ResponseTrailerMapPtr&&) {
-//     ENVOY_LOG(trace, "onReceiveTrailingMetadata");
-// };
+
+
 void GrpcClientImpl::onRemoteClose(Grpc::Status::GrpcStatus status, const std::string& message) {
       stream_ = nullptr;
+      callbacks_->complete(LimitStatus::Error);
       ENVOY_LOG(trace, "onRemoteClose : {} {}", status, message);
-
 };
 
 void GrpcClientImpl::establishNewStream(){
@@ -123,15 +73,10 @@ void GrpcClientImpl::establishNewStream(){
       }
 };
 
-
-
-
 ClientPtr rateLimitClient(Server::Configuration::FactoryContext& context,
                           const envoy::config::core::v3::GrpcService& grpc_service,
                           const std::chrono::milliseconds timeout,
                           envoy::config::core::v3::ApiVersion transport_api_version) {
-  // TODO(ramaraochavali): register client to singleton when GrpcClientImpl supports concurrent
-  // requests.
   const auto async_client_factory =
       context.clusterManager().grpcAsyncClientManager().factoryForGrpcService(
           grpc_service, context.scope(), true);

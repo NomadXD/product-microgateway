@@ -11,6 +11,10 @@ namespace Extensions{
 namespace HttpFilters{
 namespace MgwWebSocket{
 
+/**
+ * Config registration for the mgw_websocket filter. 
+ * TODO (LahiruUdayanga) - Modify filter config for route specific config. 
+ */
 class MgwWebSocketFilterConfig : public Common::FactoryBase<
                                     envoy::extensions::filters::http::mgw_websocket::v3::RateLimit> {
 
@@ -22,10 +26,7 @@ private:
         const envoy::extensions::filters::http::mgw_websocket::v3::RateLimit& proto_config,
         const std::string& stats_prefix, 
         Server::Configuration::FactoryContext& context
-    ) override;
-                                    
-                                    
-                                    
+    ) override;                         
 };
 
 } // namespace MgwWebSocket

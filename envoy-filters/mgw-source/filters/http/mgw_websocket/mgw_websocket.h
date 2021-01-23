@@ -14,8 +14,20 @@ namespace Extensions{
 namespace HttpFilters{
 namespace MgwWebSocket{
 
+/**
+ * RateLimitType defines the type of rate limit applied.
+ *  Default - Ratelimit applied in both directions.
+ *  Downstream - Ratelimit applied for downstream -> upstream.
+ *  Upstream - Ratelimit applied for upstream -> downstream.
+ */
 enum class RateLimitType {Default, Downstream, Upstream};
 
+/**
+ * RateLimitStatus defines the MgwWebsocket filter state. 
+ *  UnderLimit - before rate limit
+ *  OverLimit - after rate limit
+ *  FailureModeAllowed - filter state when grpc connection to ratelimit service fails. 
+ */
 enum class RateLimitStatus {UnderLimit, OverLimit, FailureModeAllowed};
 
 class FilterConfig {
@@ -34,7 +46,6 @@ public:
     Runtime::Loader& runtime() { return runtime_; }
     Stats::Scope& scope() { return scope_; }
     RateLimitType rateLimitType() const { return ratelimit_type_;}
-    RateLimitStatus RateLimitStatus() const {return rate_limit_status_;}
     bool failureModeAllow() const { return !failure_mode_deny_; }
     Http::Context& httpContext() { return http_context_; }
 
@@ -58,7 +69,6 @@ static RateLimitType stringToType(const std::string& rate_limit_type){
     Runtime::Loader& runtime_;
     const bool failure_mode_deny_;
     Http::Context& http_context_;
-    enum RateLimitStatus rate_limit_status_;
 
 };
 
@@ -97,11 +107,14 @@ public:
 
 private:
 FilterConfigSharedPtr config_;
-Http::StreamDecoderFilterCallbacks* callbacks_{};
+Http::StreamDecoderFilterCallbacks* decoder_callbacks_{};
+Http::StreamEncoderFilterCallbacks* encoder_callbacks_{};
 ClientPtr client_;
+RateLimitStatus state_{RateLimitStatus::UnderLimit};
 //Http::ResponseHeaderMapPtr response_headers_to_add_;
 //Http::RequestHeaderMap* request_headers_{};
-void initiateCall(envoy::config::core::v3::Metadata&& metadata_context);
+//void publishMetaDataAsync(envoy::config::core::v3::Metadata&& metadata_context);
+void publishMetaDataAsync(const Buffer::Instance& buffer, const StreamInfo::StreamInfo& streamInfo);
 };
 
 

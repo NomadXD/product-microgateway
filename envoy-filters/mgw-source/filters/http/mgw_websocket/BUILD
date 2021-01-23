@@ -16,6 +16,7 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":ratelimit_lib",
+        ":websocket_decoder",
         "//mgw-api/extensions/filters/http/mgw_websocket/v3:pkg_cc_proto",
         "@envoy//source/common/http:codes_lib",
         
@@ -55,5 +56,15 @@ envoy_cc_library(
     deps = [
         "//mgw-api/extensions/filters/http/mgw_websocket/v3:pkg_cc_proto",
         #"@envoy//include/envoy/tracing:http_tracer_interface",
+    ]
+)
+
+envoy_cc_library(
+    name = "websocket_decoder",
+    hdrs = ["websocket_decoder.h"],
+    srcs = ["websocket_decoder.cc"],
+    repository = "@envoy",
+    deps = [
+        "@envoy//source/extensions/filters/http/common:factory_base_lib",
     ]
 )
