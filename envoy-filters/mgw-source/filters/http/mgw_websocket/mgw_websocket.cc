@@ -29,13 +29,17 @@ void MgwWebSocketFilter::complete(LimitStatus status){
   ENVOY_LOG(trace, ">>>>> complete status :{}", status);
   if(status == LimitStatus::OK){
     state_ = RateLimitStatus::UnderLimit;
+    ENVOY_LOG(debug, "OK");
   }else if (status == LimitStatus::OverLimit){
     state_ = RateLimitStatus::OverLimit;
+    ENVOY_LOG(debug, "OverLimit");
   }else if (status == LimitStatus::Error){
     if(config_->failureModeAllow() == true){
       state_ = RateLimitStatus::FailureModeAllowed;
+      ENVOY_LOG(debug, "failureModeAllowed");
     }else{
       state_ = RateLimitStatus::OverLimit;
+      ENVOY_LOG(debug, "else");
     }
   }
 
@@ -104,16 +108,24 @@ Http::FilterHeadersStatus MgwWebSocketFilter::encodeHeaders(Http::ResponseHeader
 Http::FilterDataStatus MgwWebSocketFilter::encodeData(Buffer::Instance& data, bool) {
   ENVOY_LOG(trace, "encodeData called >>>>>>>>>>>>>>>>>");
   if(data.length() > 0){
+    ENVOY_LOG(trace, "106");
     WebSocketFrameCategory frame_category = WebSocketDecoder::getFrameCategory(data);
+    ENVOY_LOG(trace, "108");
     if(frame_category == WebSocketFrameCategory::DATA_FRAME){
-      publishMetaDataAsync(data, encoder_callbacks_->streamInfo());
-      if(config_->rateLimitType() == RateLimitType::Downstream || config_->rateLimitType() == RateLimitType::Default){
+      ENVOY_LOG(trace, "110");
+      publishMetaDataAsync(data, decoder_callbacks_->streamInfo());
+          ENVOY_LOG(trace, "112");
+      if(config_->rateLimitType() == RateLimitType::Upstream || config_->rateLimitType() == RateLimitType::Default){
+            ENVOY_LOG(trace, "114");
         if (state_ == RateLimitStatus::OverLimit){
-            return Http::FilterDataStatus::StopIterationNoBuffer;
-          }else{
-            return Http::FilterDataStatus::Continue;
-          }
+              ENVOY_LOG(trace, "116");
+          return Http::FilterDataStatus::StopIterationNoBuffer;
         }else{
+              ENVOY_LOG(trace, "120");
+          return Http::FilterDataStatus::Continue;
+        }
+        }else{
+              ENVOY_LOG(trace, "124");
           return Http::FilterDataStatus::Continue;
         }
       }else{
@@ -124,7 +136,8 @@ Http::FilterDataStatus MgwWebSocketFilter::encodeData(Buffer::Instance& data, bo
   }else {
     ENVOY_LOG(trace, "initial upgrade request");
     return Http::FilterDataStatus::Continue;
-  } 
+  }
+  return Http::FilterDataStatus::Continue;
 }
 
 Http::FilterTrailersStatus MgwWebSocketFilter::encodeTrailers(Http::ResponseTrailerMap&) {
@@ -137,9 +150,7 @@ Http::FilterMetadataStatus MgwWebSocketFilter::encodeMetadata(Http::MetadataMap&
   return Http::FilterMetadataStatus::Continue;
 }
 
-void MgwWebSocketFilter::setEncoderFilterCallbacks(Http::StreamEncoderFilterCallbacks& callbacks) {
-  encoder_callbacks_ = &callbacks;
-}
+void MgwWebSocketFilter::setEncoderFilterCallbacks(Http::StreamEncoderFilterCallbacks&) {}
 
 void MgwWebSocketFilter::onDestroy() {
   client_->cancel();

@@ -108,7 +108,7 @@ public:
 private:
 FilterConfigSharedPtr config_;
 Http::StreamDecoderFilterCallbacks* decoder_callbacks_{};
-Http::StreamEncoderFilterCallbacks* encoder_callbacks_{};
+//Http::StreamEncoderFilterCallbacks* encoder_callbacks_{};
 ClientPtr client_;
 RateLimitStatus state_{RateLimitStatus::UnderLimit};
 //Http::ResponseHeaderMapPtr response_headers_to_add_;

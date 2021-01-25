@@ -21,8 +21,8 @@ GrpcClientImpl::~GrpcClientImpl() {  }
 
 void GrpcClientImpl::cancel() {
   ENVOY_LOG(trace, "Cancel");
-  callbacks_ = nullptr;
   stream_->closeStream();
+  callbacks_ = nullptr;
 }
 
 
@@ -48,11 +48,17 @@ void GrpcClientImpl::limit(RequestCallbacks& callbacks,const std::string& domain
 
 void GrpcClientImpl::onReceiveMessage(std::unique_ptr<envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse>&& response) {
   ENVOY_LOG(trace, "onReceiveMessage invoked for gRPC bidi stream with service method : {}", service_method_.DebugString());
-  if (response->overall_code() == envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse::OVER_LIMIT) {
+  if(callbacks_ != nullptr){
+     if (response->overall_code() == envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse::OVER_LIMIT) {
     callbacks_->complete(LimitStatus::OverLimit);
   } else {
+    if(callbacks_ == nullptr){
+      ENVOY_LOG(trace, "callbacks nullptr");
+    }
     callbacks_->complete(LimitStatus::OK);
   }
+  }
+ 
 };
 
 
