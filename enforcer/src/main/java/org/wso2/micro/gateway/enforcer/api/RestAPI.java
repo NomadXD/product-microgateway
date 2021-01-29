@@ -20,10 +20,13 @@ package org.wso2.micro.gateway.enforcer.api;
 import io.envoyproxy.envoy.service.auth.v3.CheckRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wso2.gateway.discovery.api.Api;
+import org.wso2.gateway.discovery.api.Resource;
 import org.wso2.micro.gateway.enforcer.Filter;
 import org.wso2.micro.gateway.enforcer.api.config.APIConfig;
 import org.wso2.micro.gateway.enforcer.api.config.ResourceConfig;
 import org.wso2.micro.gateway.enforcer.constants.APIConstants;
+import org.wso2.micro.gateway.enforcer.cors.CorsFilter;
 import org.wso2.micro.gateway.enforcer.security.AuthFilter;
 
 import java.util.ArrayList;
@@ -57,6 +60,26 @@ public class RestAPI implements API {
     }
 
     @Override
+    public String init(Api api) {
+        String basePath = api.getBasePath();
+        String name = api.getTitle();
+        String version = api.getVersion();
+        List<ResourceConfig> resources = new ArrayList<>();
+        for (Resource res: api.getResourcesList()) {
+            // TODO: (Praminda) handle multiple methods for a resource
+            // TODO: (Praminda) handle all fields of resource
+            String method = res.getMethods(0);
+            ResourceConfig resConfig = buildResource(res.getPath(), method);
+
+            resources.add(resConfig);
+        }
+        this.apiConfig = new APIConfig.Builder(name).basePath(basePath).version(version).resources(resources).build();
+
+        initFilters();
+        return basePath;
+    }
+
+    @Override
     public ResponseObject process(RequestContext requestContext) {
         ResponseObject responseObject = new ResponseObject();
         if (executeFilterChain(requestContext)) {
@@ -65,11 +88,20 @@ public class RestAPI implements API {
                 responseObject.setHeaderMap(requestContext.getResponseHeaders());
             }
         } else {
+            // If a filter chain stops with a false, it will be passed directly to the client.
+            responseObject.setDirectResponse(true);
             responseObject.setStatusCode(Integer.parseInt(requestContext.getProperties().get("code").toString()));
-            responseObject.setErrorCode(requestContext.getProperties().get("error_code").toString());
-            responseObject.setErrorDescription(requestContext.getProperties().get("error_description").toString());
+            if (requestContext.getProperties().get("error_code") != null) {
+                responseObject.setErrorCode(requestContext.getProperties().get("error_code").toString());
+            }
+            if (requestContext.getProperties().get("error_code") != null) {
+                responseObject.setErrorDescription(requestContext.getProperties()
+                        .get("error_description").toString());
+            }
+            if (requestContext.getResponseHeaders() != null && requestContext.getResponseHeaders().size() > 0) {
+                responseObject.setHeaderMap(requestContext.getResponseHeaders());
+            }
         }
-
         return responseObject;
     }
 
@@ -108,6 +140,8 @@ public class RestAPI implements API {
     private void initFilters() {
         AuthFilter authFilter = new AuthFilter();
         authFilter.init(apiConfig);
+        CorsFilter corsFilter = new CorsFilter();
+        this.filters.add(corsFilter);
         this.filters.add(authFilter);
     }
 }

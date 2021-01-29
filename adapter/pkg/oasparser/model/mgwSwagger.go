@@ -17,7 +17,9 @@
 package model
 
 import (
+	parser "github.com/mitchellh/mapstructure"
 	logger "github.com/wso2/micro-gw/loggers"
+	"github.com/wso2/micro-gw/pkg/svcdiscovery"
 )
 
 // MgwSwagger represents the object structure holding the information related to the
@@ -36,6 +38,7 @@ type MgwSwagger struct {
 	sandboxUrls      []Endpoint
 	resources        []Resource
 	xWso2Basepath    string
+	xWso2Cors        *CorsConfig
 }
 
 // Endpoint represents the structure of an endpoint.
@@ -55,6 +58,22 @@ type Endpoint struct {
 	// If the port is not specified, 80 is assigned if URLType is http
 	// 443 is assigned if URLType is https
 	Port uint32
+	//ServiceDiscoveryQuery consul query for service discovery
+	ServiceDiscoveryString string
+}
+
+// CorsConfig represents the API level Cors Configuration
+type CorsConfig struct {
+	Enabled                       bool     `mapstructure:"corsConfigurationEnabled"`
+	AccessControlAllowCredentials bool     `mapstructure:"accessControlAllowCredentials,omitempty"`
+	AccessControlAllowHeaders     []string `mapstructure:"accessControlAllowHeaders"`
+	AccessControlAllowMethods     []string `mapstructure:"accessControlAllowMethods"`
+	AccessControlAllowOrigins     []string `mapstructure:"accessControlAllowOrigins"`
+}
+
+// GetCorsConfig returns the CorsConfiguration Object.
+func (swagger *MgwSwagger) GetCorsConfig() *CorsConfig {
+	return swagger.xWso2Cors
 }
 
 // GetAPIType returns the openapi version
@@ -98,6 +117,16 @@ func (swagger *MgwSwagger) GetResources() []Resource {
 	return swagger.resources
 }
 
+// GetDescription returns the description of the openapi
+func (swagger *MgwSwagger) GetDescription() string {
+	return swagger.description
+}
+
+// GetID returns the Id of the API
+func (swagger *MgwSwagger) GetID() string {
+	return swagger.id
+}
+
 // SetXWso2Extenstions set the MgwSwagger object with the properties
 // extracted from vendor extensions.
 // xWso2Basepath, xWso2ProductionEndpoints, and xWso2SandboxEndpoints are assigned
@@ -109,6 +138,7 @@ func (swagger *MgwSwagger) SetXWso2Extenstions() {
 	swagger.setXWso2Basepath()
 	swagger.setXWso2PrdoductionEndpoint()
 	swagger.setXWso2SandboxEndpoint()
+	swagger.setXWso2Cors()
 }
 
 func (swagger *MgwSwagger) setXWso2PrdoductionEndpoint() {
@@ -156,12 +186,32 @@ func getXWso2Endpoints(vendorExtensible map[string]interface{}, endpointType str
 			} else {
 				castedUrlsInterface := urlsProperty.([]interface{})
 				for _, v := range castedUrlsInterface {
-					endpoint := getHostandBasepathandPort(v.(string))
-					endpointType, endpointTypeFound := val[typeConst]
-					if endpointTypeFound {
-						endpoint.URLType = endpointType.(string)
+					if svcdiscovery.IsDiscoveryServiceEndpoint(v.(string)) {
+						logger.LoggerOasparser.Debug("consul query syntax found: ", v.(string))
+						queryString, defHost, err := svcdiscovery.ParseConsulSyntax(v.(string))
+						if err != nil {
+							logger.LoggerOasparser.Error("consul syntax parse error ", err)
+							continue
+						}
+						endpoint := getHostandBasepathandPort(defHost)
+						endpointType, endpointTypeFound := val[typeConst]
+						endpoint.ServiceDiscoveryString = queryString
+
+						if endpointTypeFound {
+							endpoint.URLType = endpointType.(string)
+						}
+						endpoints = append(endpoints, endpoint)
+
+					} else {
+						endpoint := getHostandBasepathandPort(v.(string))
+						endpointType, endpointTypeFound := val[typeConst]
+
+						if endpointTypeFound {
+							endpoint.URLType = endpointType.(string)
+						}
+						endpoints = append(endpoints, endpoint)
 					}
-					endpoints = append(endpoints, endpoint)
+
 				}
 				return endpoints
 			}
@@ -185,5 +235,30 @@ func getXWso2Basepath(vendorExtensible map[string]interface{}) string {
 }
 
 func (swagger *MgwSwagger) setXWso2Basepath() {
-	swagger.xWso2Basepath = getXWso2Basepath(swagger.vendorExtensible)
+	extBasepath := getXWso2Basepath(swagger.vendorExtensible)
+	if extBasepath != "" {
+		swagger.xWso2Basepath = extBasepath
+	}
+}
+
+func (swagger *MgwSwagger) setXWso2Cors() {
+	if cors, corsFound := swagger.vendorExtensible[xWso2Cors]; corsFound {
+		logger.LoggerOasparser.Debugf("%v configuration is available", xWso2Cors)
+		if parsedCors, parsedCorsOk := cors.(map[string]interface{}); parsedCorsOk {
+			//Default CorsConfiguration
+			corsConfig := &CorsConfig{
+				Enabled: true,
+			}
+			err := parser.Decode(parsedCors, &corsConfig)
+			if err != nil {
+				logger.LoggerOasparser.Errorf("Error while parsing %v: "+err.Error(), xWso2Cors)
+				return
+			}
+			logger.LoggerOasparser.Debugf("Cors Configuration is applied : %+v\n", corsConfig)
+			swagger.xWso2Cors = corsConfig
+			return
+		}
+		logger.LoggerOasparser.Errorf("Error while parsing %v .", xWso2Cors)
+	}
+
 }
