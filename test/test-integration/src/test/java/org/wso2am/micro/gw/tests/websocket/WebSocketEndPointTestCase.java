@@ -1,0 +1,55 @@
+package org.wso2am.micro.gw.tests.websocket;
+
+import io.netty.handler.codec.http.HttpHeaderNames;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import org.wso2am.micro.gw.tests.common.BaseTestCase;
+import org.wso2am.micro.gw.tests.common.model.API;
+import org.wso2am.micro.gw.tests.common.model.ApplicationDTO;
+import org.wso2am.micro.gw.tests.util.ApiDeployment;
+import org.wso2am.micro.gw.tests.util.ApiProjectGenerator;
+import org.wso2am.micro.gw.tests.util.TestConstant;
+import org.wso2am.micro.gw.tests.util.WebSocketClientImpl;
+
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
+
+
+public class WebSocketEndPointTestCase extends BaseTestCase {
+    protected String jwtTokenProd;
+    protected String jwtTokenSand;
+    @BeforeClass
+    public void beforeClass() throws Exception{
+        super.startMGW();
+
+        String prodSandApiZipfile = ApiProjectGenerator.createApictlProjZip(null, null, "apis/openApis/mockWebSocketApi.yaml");
+        ApiDeployment.deployAPI(prodSandApiZipfile);
+
+        API api = new API();
+        api.setName("EchoWebSocket");
+        api.setContext("echowebsocket/1.0");
+        api.setProdEndpoint(getMockServiceURLWebSocket("/"));
+        api.setVersion("1.0");
+        api.setProvider("admin");
+
+        //Define application info
+        ApplicationDTO application = new ApplicationDTO();
+        application.setName("jwtApp");
+        application.setTier("Unlimited");
+        application.setId((int) (Math.random() * 1000));
+
+        jwtTokenProd = getJWT(api, application, "Unlimited", TestConstant.KEY_TYPE_PRODUCTION, 3600);
+        jwtTokenSand = getJWT(api, application, "Unlimited", TestConstant.KEY_TYPE_SANDBOX, 3600);
+    }
+
+    @Test(description = "Invoke websocket endpoint")
+    public void invokeProdSandEndpoints() throws Exception{
+        WebSocketClientImpl webSocketClient = new WebSocketClientImpl(new URI(getMockServiceURLWebSocket("/")));
+        webSocketClient.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), "Bearer " + jwtTokenProd);
+        boolean isConnected = webSocketClient.connectBlocking(5000, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(isConnected, "Unable to connect to mock websocket endpoint");
+    }
+
+
+}

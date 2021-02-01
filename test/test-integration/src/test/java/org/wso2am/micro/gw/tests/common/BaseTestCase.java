@@ -124,4 +124,8 @@ public class BaseTestCase {
         jwtTokenInfo.put("subscribedAPIs", new JSONArray(Arrays.asList(subscribedApiDTO)));
         return TokenUtil.getBasicJWT(applicationDTO, jwtTokenInfo, keyType, validityPeriod);
     }
+
+    public static String getMockServiceURLWebSocket(String servicePath) throws MalformedURLException{
+        return new URL(new URL("http://localhost:"+TestConstant.MOCK_WEB_SOCKET_PORT), servicePath).toString();
+    }
 }
