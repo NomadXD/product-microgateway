@@ -30,6 +30,8 @@ import org.wso2am.micro.gw.tests.util.*;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -125,7 +127,7 @@ public class BaseTestCase {
         return TokenUtil.getBasicJWT(applicationDTO, jwtTokenInfo, keyType, validityPeriod);
     }
 
-    public static String getMockServiceURLWebSocket(String servicePath) throws MalformedURLException{
-        return new URL(new URL("http://localhost:"+TestConstant.MOCK_WEB_SOCKET_PORT), servicePath).toString();
+    public static URI getMockServiceURLWebSocket(String servicePath) throws URISyntaxException {
+        return new URI("wss://localhost:"+TestConstant.GATEWAY_LISTENER_HTTPS_PORT+servicePath);
     }
 }

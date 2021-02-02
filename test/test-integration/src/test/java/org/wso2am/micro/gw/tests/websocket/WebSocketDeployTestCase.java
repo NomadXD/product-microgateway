@@ -27,7 +27,7 @@ public class WebSocketDeployTestCase extends BaseTestCase {
     @Test(description = "Test to check the api deployment is working")
     public void webSocketDeployTest() throws Exception{
         //api yaml file should put to the resources/apis/openApis folder
-        String apiZipfile = ApiProjectGenerator.createApictlProjZip(null, null, "apis/openApis/mockWebSocketApi.yaml");
+        String apiZipfile = ApiProjectGenerator.createApictlProjZip(null, null, "apis/openApis/mockWebSocketApiProdSand.yaml");
 
         // Set header
         Map<String, String> headers = new HashMap<String,String>();

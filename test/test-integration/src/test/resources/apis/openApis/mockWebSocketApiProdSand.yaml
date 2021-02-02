@@ -59,9 +59,9 @@ data:
   endpointConfig:
     endpoint_type: http
     sandbox_endpoints:
-      url: ws://mockBackend:2395
+      url: wss://mockBackend:2395
     production_endpoints:
-      url: ws://mockBackend:2395
+      url: wss://mockBackend:2395
   endpointImplementationType: ENDPOINT
   scopes: []
   operations: []

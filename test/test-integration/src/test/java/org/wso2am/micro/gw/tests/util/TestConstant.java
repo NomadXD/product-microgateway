@@ -66,4 +66,6 @@ public class TestConstant {
 
     public static final String LINE = "\r\n";
     public static final String MOCK_BACKEND_DOCKER_IMAGE = "wso2/mg-mock-backend";
+    public static final String MOCK_WEBSOCKET_HELLO = "Hello!";
+    public static final int MOCK_WEBSOCKET_RETRY_INTERVAL = 1000;
 }

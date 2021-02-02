@@ -13,6 +13,7 @@ import org.wso2am.micro.gw.tests.util.TestConstant;
 import org.wso2am.micro.gw.tests.util.WebSocketClientImpl;
 
 import java.net.URI;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 
@@ -23,13 +24,13 @@ public class WebSocketEndPointTestCase extends BaseTestCase {
     public void beforeClass() throws Exception{
         super.startMGW();
 
-        String prodSandApiZipfile = ApiProjectGenerator.createApictlProjZip(null, null, "apis/openApis/mockWebSocketApi.yaml");
+        String prodSandApiZipfile = ApiProjectGenerator.createApictlProjZip(null, null, "apis/openApis/mockWebSocketApiProdSand.yaml");
         ApiDeployment.deployAPI(prodSandApiZipfile);
 
         API api = new API();
         api.setName("EchoWebSocket");
         api.setContext("echowebsocket/1.0");
-        api.setProdEndpoint(getMockServiceURLWebSocket("/"));
+        api.setProdEndpoint("wss://mockBackend:"+TestConstant.MOCK_WEB_SOCKET_PORT);
         api.setVersion("1.0");
         api.setProvider("admin");
 
@@ -45,10 +46,22 @@ public class WebSocketEndPointTestCase extends BaseTestCase {
 
     @Test(description = "Invoke websocket endpoint")
     public void invokeProdSandEndpoints() throws Exception{
-        WebSocketClientImpl webSocketClient = new WebSocketClientImpl(new URI(getMockServiceURLWebSocket("/")));
+        Object lock = new Object();
+        Timer timer = new Timer();
+        WebSocketClientImpl webSocketClient = new WebSocketClientImpl(getMockServiceURLWebSocket("/echowebsocket/1.0"), lock, timer);
         webSocketClient.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), "Bearer " + jwtTokenProd);
         boolean isConnected = webSocketClient.connectBlocking(5000, TimeUnit.MILLISECONDS);
         Assert.assertTrue(isConnected, "Unable to connect to mock websocket endpoint");
+        webSocketClient.send(TestConstant.MOCK_WEBSOCKET_HELLO);
+        timer.schedule(webSocketClient.getWebSocketTimer(),0, TestConstant.MOCK_WEBSOCKET_RETRY_INTERVAL);
+        synchronized (lock){
+            try{
+                lock.wait();
+            }catch (InterruptedException e){
+                throw new Exception(e);
+            }
+        }
+        Assert.assertTrue(webSocketClient.isEchoReceived(),"Unable to capture websocket echo");
     }
 
 
