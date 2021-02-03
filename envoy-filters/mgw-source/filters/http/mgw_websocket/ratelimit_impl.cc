@@ -91,7 +91,7 @@ ClientPtr rateLimitClient(Server::Configuration::FactoryContext& context,
 }
 
 const Protobuf::MethodDescriptor& GrpcClientImpl::getMethodDescriptor(){
-  constexpr char V3[] = "envoy.extensions.filters.http.mgw_websocket.v3.RateLimitService.ShouldRateLimitStream";
+  constexpr char V3[] = "envoy.extensions.filters.http.mgw_websocket.v3.WebSocketMetadataService.publishMetadata";
   const auto* descriptor = Protobuf::DescriptorPool::generated_pool()->FindMethodByName(V3);
   ASSERT(descriptor != nullptr);
   return *descriptor;

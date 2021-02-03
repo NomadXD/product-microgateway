@@ -40,20 +40,16 @@ message RateLimitResponse{
     
 }
 
-message RateLimitDescriptor{
-    // Descriptor key.
-    string key = 1 [(validate.rules).string = {min_len:1}];
+// message RateLimitDescriptor{
+//     // Descriptor key.
+//     string key = 1 [(validate.rules).string = {min_len:1}];
 
-    // Descriptor value.
-    string value = 2 [(validate.rules).string = {min_len: 1}];
-}
+//     // Descriptor value.
+//     string value = 2 [(validate.rules).string = {min_len: 1}];
+// }
 
-service RateLimitService{
-    rpc ShouldRateLimit(RateLimitRequest) returns (RateLimitResponse){
-
-    }
-
-    rpc ShouldRateLimitStream(stream RateLimitRequest) returns (stream RateLimitResponse){
+service WebSocketMetadataService{
+    rpc publishMetadata(stream RateLimitRequest) returns (stream RateLimitResponse){
 
     }
 }
