@@ -17,12 +17,16 @@ GrpcClientImpl::GrpcClientImpl(Grpc::RawAsyncClientPtr&& async_client,
       transport_api_version_(transport_api_version) {}
 
 
-GrpcClientImpl::~GrpcClientImpl() {  }
+GrpcClientImpl::~GrpcClientImpl() { 
+  ENVOY_LOG(trace, "gRPC client destructor called");
+ }
 
 void GrpcClientImpl::cancel() {
   ENVOY_LOG(trace, "Cancel");
-  stream_->closeStream();
   callbacks_ = nullptr;
+  if(stream_ != nullptr){
+    stream_->closeStream();
+  }
 }
 
 
