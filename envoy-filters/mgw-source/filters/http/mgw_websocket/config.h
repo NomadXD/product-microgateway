@@ -19,14 +19,13 @@ class MgwWebSocketFilterConfig : public Common::FactoryBase<
                                     envoy::extensions::filters::http::mgw_websocket::v3::RateLimit> {
 
 public:
-    MgwWebSocketFilterConfig() : FactoryBase("envoy.filters.http.mgw_websocket") {}
+  MgwWebSocketFilterConfig() : FactoryBase("envoy.filters.http.mgw_websocket") {}
 
 private:
-    Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
-        const envoy::extensions::filters::http::mgw_websocket::v3::RateLimit& proto_config,
-        const std::string& stats_prefix, 
-        Server::Configuration::FactoryContext& context
-    ) override;                         
+  Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
+    const envoy::extensions::filters::http::mgw_websocket::v3::RateLimit& proto_config,
+    const std::string& stats_prefix, 
+    Server::Configuration::FactoryContext& context) override;                         
 };
 
 } // namespace MgwWebSocket

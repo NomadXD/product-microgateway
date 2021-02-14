@@ -19,19 +19,19 @@ namespace HttpFilters{
 namespace MgwWebSocket{
 
 Http::FilterFactoryCb MgwWebSocketFilterConfig::createFilterFactoryFromProtoTyped(
-    const envoy::extensions::filters::http::mgw_websocket::v3::RateLimit& proto_config,
-    const std::string&, Server::Configuration::FactoryContext& context){
+  const envoy::extensions::filters::http::mgw_websocket::v3::RateLimit& proto_config,
+  const std::string&, Server::Configuration::FactoryContext& context){
 
-    FilterConfigSharedPtr filter_config(new FilterConfig(proto_config, context.localInfo(),
+  FilterConfigSharedPtr filter_config(new FilterConfig(proto_config, context.localInfo(),
                                                        context.scope(), context.runtime(),
                                                        context.httpContext()));
 
-    const std::chrono::milliseconds timeout =
+  const std::chrono::milliseconds timeout =
       std::chrono::milliseconds(PROTOBUF_GET_MS_OR_DEFAULT(proto_config, timeout, 20));
 
-    return [proto_config, &context, timeout,
-        filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-        callbacks.addStreamFilter(std::make_shared<MgwWebSocketFilter>(filter_config, rateLimitClient(
+  return [proto_config, &context, timeout,
+      filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+      callbacks.addStreamFilter(std::make_shared<MgwWebSocketFilter>(filter_config, rateLimitClient(
                         context, proto_config.rate_limit_service().grpc_service(), timeout,
                         proto_config.rate_limit_service().transport_api_version())));
     };
@@ -42,8 +42,7 @@ Http::FilterFactoryCb MgwWebSocketFilterConfig::createFilterFactoryFromProtoType
 /**
  * Static registration for the mgw_websocket.
  */
-REGISTER_FACTORY(MgwWebSocketFilterConfig,
-                 Server::Configuration::NamedHttpFilterConfigFactory){"envoy.mgw_websocket"};
+REGISTER_FACTORY(MgwWebSocketFilterConfig,Server::Configuration::NamedHttpFilterConfigFactory){"envoy.mgw_websocket"};
 
 
 } // namespace MgwWebSocket
