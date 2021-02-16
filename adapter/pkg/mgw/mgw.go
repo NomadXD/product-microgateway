@@ -138,7 +138,7 @@ func Run(conf *config.Config) {
 	// log config watcher
 	// TODO: (VirajSalaka) Implement a rest endpoint to apply configurations
 	watcherLogConf, _ := fsnotify.NewWatcher()
-	errC := watcherLogConf.Add("conf/log_config.toml")
+	errC := watcherLogConf.Add(config.GetMgwHome() + "/conf/log_config.toml")
 
 	if errC != nil {
 		logger.LoggerMgw.Fatal("Error reading the log configs. ", errC)
@@ -175,9 +175,11 @@ func Run(conf *config.Config) {
 	if enableEventHub {
 		// Load subscription data
 		subscription.LoadSubscriptionData(conf)
+
+		go messaging.ProcessEvents(conf)
+		
 		// Fetch APIs from control plane
 		fetchAPIsOnStartUp(conf)
-		go messaging.ProcessEvents(conf)
 	}
 OUTER:
 	for {
