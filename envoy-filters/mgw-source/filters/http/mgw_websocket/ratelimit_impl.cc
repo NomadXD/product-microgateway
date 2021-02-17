@@ -29,9 +29,7 @@ void GrpcClientImpl::cancel() {
   }
 }
 
-
 void GrpcClientImpl::limit(RequestCallbacks& callbacks,const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) {
-
   callbacks_= &callbacks;
   message_.set_domain(domain);
   auto metadata_ctx = message_.mutable_metadata_context();
@@ -64,7 +62,6 @@ void GrpcClientImpl::onReceiveMessage(std::unique_ptr<envoy::extensions::filters
   }
  
 };
-
 
 void GrpcClientImpl::onRemoteClose(Grpc::Status::GrpcStatus status, const std::string& message) {
       stream_ = nullptr;

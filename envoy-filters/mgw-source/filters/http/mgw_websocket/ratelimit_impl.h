@@ -16,14 +16,6 @@ namespace MgwWebSocket{
 using RateLimitAsyncCallbacks = 
     Grpc::AsyncStreamCallbacks<envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse>;
 
-struct ConstantValues {
-  const std::string TraceStatus = "ratelimit_status";
-  const std::string TraceOverLimit = "over_limit";
-  const std::string TraceOk = "ok";
-};
-
-using Constants = ConstSingleton<ConstantValues>;
-
 class GrpcClientImpl : public Client,
                        public Logger::Loggable<Logger::Id::config>,
                        public RateLimitAsyncCallbacks {
@@ -33,10 +25,7 @@ public:
                  envoy::config::core::v3::ApiVersion transport_api_version);
   ~GrpcClientImpl() override;
 
-  // static void createRequest(envoy::extensions::filters::http::mgw_websocket::v3::RateLimitRequest& stream,
-  //                           const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context);
-
-  // Filters::Common::RateLimit::Client
+  // MgwWebSocket::Client
   void cancel() override;
   void limit(RequestCallbacks& callbacks,const std::string& domain, envoy::config::core::v3::Metadata&& metadata_context) override;
 
@@ -44,7 +33,7 @@ public:
   void onCreateInitialMetadata(Http::RequestHeaderMap&) override {}
   void onReceiveInitialMetadata(Http::ResponseHeaderMapPtr&&) override {}
   void onReceiveMessage(
-    std::unique_ptr<envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse>&&) override;
+    std::unique_ptr<envoy::extensions::filters::http::mgw_websocket::v3::RateLimitResponse>&& response) override;
   void onReceiveTrailingMetadata(Http::ResponseTrailerMapPtr&&) override {}
   void onRemoteClose(Grpc::Status::GrpcStatus status, const std::string& message) override;
 
