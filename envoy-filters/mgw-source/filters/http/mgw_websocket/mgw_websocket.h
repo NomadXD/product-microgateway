@@ -115,6 +115,7 @@ private:
   //Http::RequestHeaderMap* request_headers_{};
   //void publishMetaDataAsync(envoy::config::core::v3::Metadata&& metadata_context);
   void publishMetaDataAsync(const Buffer::Instance& buffer, const StreamInfo::StreamInfo& streamInfo);
+  ProtobufWkt::Struct getMgwWebSocketMetadata(const Buffer::Instance& buffer,const StreamInfo::StreamInfo& streamInfo);
 };
 
 
