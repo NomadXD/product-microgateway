@@ -21,6 +21,7 @@ package org.wso2.micro.gateway.enforcer.util;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wso2.micro.gateway.enforcer.config.ConfigHolder;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -35,6 +36,7 @@ import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -135,5 +137,30 @@ public class TLSUtils {
         } catch (CertificateException | IOException e) {
             log.error("Error while adding certificates to the truststore.", e);
         }
+    }
+
+    public static Certificate getCertificate() throws CertificateException, IOException {
+        Certificate certificate = null;
+        CertificateFactory fact = CertificateFactory.getInstance(X509);
+        FileInputStream is = new FileInputStream(ConfigHolder.getInstance().getConfig().
+                getPublicCertificatePath());
+        X509Certificate cert = (X509Certificate) fact.generateCertificate(is);
+        certificate = (Certificate) cert;
+        return certificate;
+    }
+
+    public static javax.security.cert.Certificate convertCertificate(Certificate cert) {
+        javax.security.cert.Certificate certificate = null;
+        try {
+            InputStream inputStream = new ByteArrayInputStream(cert.getEncoded());
+            javax.security.cert.X509Certificate x509Certificate = javax.security.cert.X509Certificate.
+                    getInstance(inputStream);
+            certificate = (javax.security.cert.Certificate) x509Certificate;
+            return certificate;
+
+        } catch (javax.security.cert.CertificateException | java.security.cert.CertificateEncodingException e) {
+            log.debug("Error in loading certificate");
+        }
+        return certificate;
     }
 }

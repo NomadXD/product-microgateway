@@ -42,11 +42,21 @@
             <directory>../resources/k8s-artifacts</directory>
             <outputDirectory>wso2am-micro-gw-${project.version}/resources/k8s-artifacts</outputDirectory>
         </fileSet>
+        <fileSet>
+            <outputDirectory>wso2am-micro-gw-${project.version}/resources/enforcer/dropins</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
     <files>
         <file>
             <source>../resources/docker-compose.yaml</source>
             <outputDirectory>wso2am-micro-gw-${project.version}</outputDirectory>
+        </file>
+        <file>
+            <source>../resources/apim/docker-compose.yaml</source>
+            <outputDirectory>wso2am-micro-gw-${project.version}/docker-with-apim</outputDirectory>
         </file>
         <file>
             <source>../resources/security/mg.key</source>
@@ -83,6 +93,10 @@
         <file>
             <source>../resources/security/mg.pem</source>
             <outputDirectory>wso2am-micro-gw-${project.version}/resources/router/security/truststore</outputDirectory>
+        </file>
+        <file>
+            <source>../resources/apim/conf/deployment.toml</source>
+            <outputDirectory>wso2am-micro-gw-${project.version}/resources/apim/</outputDirectory>
         </file>
     </files>
 </assembly>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -23,10 +23,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.wso2am.micro.gw.tests.common.BaseTestCase;
 import org.wso2am.micro.gw.tests.mockbackend.MockBackendServer;
 import org.wso2am.micro.gw.tests.util.HttpClientRequest;
 import org.wso2am.micro.gw.tests.util.HttpResponse;
+import org.wso2am.micro.gw.tests.util.TestConstant;
 import org.wso2am.micro.gw.tests.util.Utils;
 
 import java.io.File;
@@ -43,6 +45,7 @@ public class MgwServerInstance implements MgwServer {
 
     private static final Logger log = LoggerFactory.getLogger(MgwServerInstance.class);
     private DockerComposeContainer environment;
+    private static final String ENFORCER_DEBUG_ENV = "ENFORCER_DEBUG";
 
 
     /**
@@ -52,7 +55,7 @@ public class MgwServerInstance implements MgwServer {
      * @throws MicroGWTestException
      */
     public MgwServerInstance() throws IOException, MicroGWTestException {
-        this(null, false);
+        this(null, false, false);
 
     }
 
@@ -65,7 +68,19 @@ public class MgwServerInstance implements MgwServer {
      * @throws MicroGWTestException
      */
     public MgwServerInstance(String confPath) throws IOException, MicroGWTestException {
-        this(confPath, false);
+        this(confPath, false, false);
+    }
+
+    /**
+     * initialize a docker environment using docker compose.
+     *
+     * @param confPath external conf.toml path
+     *
+     * @throws IOException
+     * @throws MicroGWTestException
+     */
+    public MgwServerInstance(String confPath, boolean tlsEnabled) throws IOException, MicroGWTestException {
+        this(confPath, tlsEnabled, false);
     }
 
     /**
@@ -77,8 +92,8 @@ public class MgwServerInstance implements MgwServer {
      * @throws IOException
      * @throws MicroGWTestException
      */
-    public MgwServerInstance(String confPath, boolean tlsEnabled) throws IOException, MicroGWTestException {
-        createTmpMgwSetup();
+    public MgwServerInstance(String confPath, boolean tlsEnabled, boolean customJwtTransformerEnabled) throws IOException, MicroGWTestException {
+        createTmpMgwSetup(customJwtTransformerEnabled);
         File targetClassesDir = new File(MgwServerInstance.class.getProtectionDomain().getCodeSource().
                 getLocation().getPath());
         String mgwServerPath = targetClassesDir.getParentFile().toString() + File.separator + "server-tmp";
@@ -86,10 +101,21 @@ public class MgwServerInstance implements MgwServer {
             Utils.copyFile(confPath, mgwServerPath  +  File.separator + "resources"  +  File.separator +
                     "conf" +  File.separator + "config.toml");
         }
-        String dockerCompsePath = mgwServerPath+  File.separator + "docker-compose.yaml";
-        MockBackendServer.addMockBackendServiceToDockerCompose(dockerCompsePath, tlsEnabled);
-        environment = new DockerComposeContainer(new File(dockerCompsePath))
-                .withLocalCompose(true);
+
+        String dockerComposePath = mgwServerPath+  File.separator + "docker-compose.yaml";
+        Logger enforcerLogger = LoggerFactory.getLogger("Enforcer");
+        Logger adapterLogger = LoggerFactory.getLogger("Adapter");
+        Logger routerLogger = LoggerFactory.getLogger("Router");
+        Slf4jLogConsumer enforcerLogConsumer = new Slf4jLogConsumer(enforcerLogger);
+        Slf4jLogConsumer adapterLogConsumer = new Slf4jLogConsumer(adapterLogger);
+        Slf4jLogConsumer routerLogConsumer = new Slf4jLogConsumer(routerLogger);
+        MockBackendServer.addMockBackendServiceToDockerCompose(dockerComposePath, tlsEnabled);
+        environment = new DockerComposeContainer(new File(dockerComposePath)).withLocalCompose(true)
+                .withLogConsumer("enforcer", enforcerLogConsumer).withLogConsumer("adapter", adapterLogConsumer)
+                .withLogConsumer("router", routerLogConsumer);
+        if (Boolean.parseBoolean(System.getenv(ENFORCER_DEBUG_ENV))) {
+            environment.withEnv("JAVA_OPTS", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5006");
+        }
 
     }
 
@@ -115,7 +141,7 @@ public class MgwServerInstance implements MgwServer {
      * @throws IOException
      * @throws MicroGWTestException
      */
-    public static void createTmpMgwSetup() throws IOException, MicroGWTestException {
+    public static void createTmpMgwSetup(boolean customJwtTransformerEnabled) throws IOException, MicroGWTestException {
         File targetClassesDir = new File(MgwServerInstance.class.getProtectionDomain().getCodeSource().
                 getLocation().getPath());
         String targetDir = targetClassesDir.getParentFile().toString();
@@ -125,6 +151,13 @@ public class MgwServerInstance implements MgwServer {
         Utils.copyDirectory(targetDir + File.separator + "micro-gwtmp" +  File.separator +
                 "wso2am-micro-gw-" + properties.getProperty("version"), targetDir +
                 File.separator + "server-tmp");
+
+        String jarLocation = System.getProperty("jwt_transformer_jar");
+        if (customJwtTransformerEnabled) {
+            Utils.copyFile(jarLocation, targetDir +
+                    File.separator + "server-tmp" + File.separator + "resources" + File.separator + "enforcer" +
+                    File.separator + "dropins" + File.separator + "jwt-transformer.jar");
+        }
     }
 
     /**

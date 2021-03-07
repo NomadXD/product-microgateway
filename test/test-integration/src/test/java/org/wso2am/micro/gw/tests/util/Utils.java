@@ -81,7 +81,7 @@ public class Utils {
                         socket.close();
                     }
                 } catch (IOException e) {
-                    log.error("Can not close the socket with is used to check the server status ", e);
+                    log.error("Cannot close the socket with is used to check the server status ", e);
                 }
             }
         }
@@ -323,7 +323,7 @@ public class Utils {
         try {
             FileUtils.copyFile(source, destination);
         } catch (IOException e) {
-            throw new MicroGWTestException("error while copying config file. ");
+            throw new MicroGWTestException("error while copying config file. ", e);
         }
     }
 

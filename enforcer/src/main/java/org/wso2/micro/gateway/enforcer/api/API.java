@@ -17,7 +17,6 @@
  */
 package org.wso2.micro.gateway.enforcer.api;
 
-import io.envoyproxy.envoy.service.auth.v3.CheckRequest;
 import org.wso2.gateway.discovery.api.Api;
 import org.wso2.micro.gateway.enforcer.Filter;
 import org.wso2.micro.gateway.enforcer.api.config.APIConfig;
@@ -28,10 +27,7 @@ import java.util.List;
  * Interface to hold different API types. This can REST, gRPC, graphql and etc.
  */
 public interface API {
-
     List<Filter> getFilters();
-
-    String init(CheckRequest request);
 
     String init(Api api);
 

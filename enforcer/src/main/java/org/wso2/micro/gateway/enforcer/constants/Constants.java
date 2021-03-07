@@ -22,12 +22,11 @@ package org.wso2.micro.gateway.enforcer.constants;
  * This class holds the constant keys related to the Microgateway.
  */
 public class Constants {
-
     public static final String CONFIG_TYPE_URL = "type.googleapis.com/wso2.discovery.config.enforcer.Config";
     public static final String API_TYPE_URL = "type.googleapis.com/wso2.discovery.api.Api";
     public static final String SUBSCRIPTION_LIST_TYPE_URL =
             "type.googleapis.com/wso2.discovery.subscription.SubscriptionList";
-    public static final String API_LIST_TYPE_URL = "type.googleapis.com/wso2.discovery.subscription.ApiList";
+    public static final String API_LIST_TYPE_URL = "type.googleapis.com/wso2.discovery.subscription.APIList";
     public static final String APPLICATION_LIST_TYPE_URL =
             "type.googleapis.com/wso2.discovery.subscription.ApplicationList";
     public static final String APPLICATION_POLICY_LIST_TYPE_URL =
@@ -36,8 +35,21 @@ public class Constants {
             "type.googleapis.com/wso2.discovery.subscription.SubscriptionPolicyList";
     public static final String APPLICATION_KEY_MAPPING_LIST_TYPE_URL =
             "type.googleapis.com/wso2.discovery.subscription.ApplicationKeyMappingList";
+    public static final String KEY_MANAGER_TYPE_URL =
+            "type.googleapis.com/wso2.discovery.keymgt.KeyManagerConfig";
+    public static final String REVOKED_TOKEN_TYPE_URL =
+            "type.googleapis.com/wso2.discovery.keymgt.RevokedToken";
     public static final int MAX_XDS_RETRIES = 3;
 
     // Config constants
     public static final String EVENT_HUB_EVENT_LISTENING_ENDPOINT = "eventListeningEndpoints";
+
+    public static final String BEGINING_OF_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n";
+    public static final String END_OF_PRIVATE_KEY = "-----END PRIVATE KEY-----";
+    public static final String RSA = "RSA";
+
+    public static final String OBJECT_THIS_NOTATION = "this$";
+    public static final String ENV_PREFIX = "$env{";
+    public static final String START_BRACKET = "{";
+    public static final String END_BRACKET = "}";
 }
