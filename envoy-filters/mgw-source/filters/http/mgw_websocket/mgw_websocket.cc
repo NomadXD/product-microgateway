@@ -13,17 +13,14 @@ namespace HttpFilters{
 namespace MgwWebSocket{
 
 void MgwWebSocketFilter::publishMetaDataAsync(const Buffer::Instance& buffer, const StreamInfo::StreamInfo& streamInfo){
-  envoy::config::core::v3::Metadata metadata_context;
+  envoy::config::core::v3::Metadata metadata_context{};
+  // Read metadata added by ext_authz filter
   const auto& request_metadata = streamInfo.dynamicMetadata().filter_metadata();
   const auto& metadata_it = request_metadata.find("envoy.filters.http.ext_authz");
   if (metadata_it != request_metadata.end()) {
     (*metadata_context.mutable_filter_metadata())[metadata_it->first] = metadata_it->second;
   }
-  (*metadata_context.mutable_filter_metadata())["envoy.filters.http.mgw_websocket"] = getMgwWebSocketMetadata(buffer, streamInfo);
-  client_ -> limit(*this, config_->domain(), std::move(metadata_context));
-}
-
-ProtobufWkt::Struct MgwWebSocketFilter::getMgwWebSocketMetadata(const Buffer::Instance& buffer,const StreamInfo::StreamInfo& streamInfo){
+  // Create mgw_websocket metadata 
   ProtobufWkt::Struct mgw_websocket_metadata{};
   auto& fields = *mgw_websocket_metadata.mutable_fields();
   const std::string frame_length_key{"frame_length"};
@@ -35,7 +32,8 @@ ProtobufWkt::Struct MgwWebSocketFilter::getMgwWebSocketMetadata(const Buffer::In
   fields[frame_length_key].set_number_value(frame_length_value);
   *fields[upstream_host_key].mutable_string_value() = upstream_host_value;
   *fields[remote_ip_key].mutable_string_value() = remote_ip_value;
-  return mgw_websocket_metadata;
+  (*metadata_context.mutable_filter_metadata())["envoy.filters.http.mgw_websocket"] = mgw_websocket_metadata;
+  client_ -> limit(*this, config_->domain(), std::move(metadata_context));
 }
 
 void MgwWebSocketFilter::complete(LimitStatus status){
@@ -61,6 +59,7 @@ void MgwWebSocketFilter::complete(LimitStatus status){
 
 Http::FilterHeadersStatus MgwWebSocketFilter::decodeHeaders(Http::RequestHeaderMap&, bool) {
     ENVOY_LOG(trace, "mgw_websocket decodeHeaders called");
+    ENVOY_LOG(debug, "demo debug message");
     return Http::FilterHeadersStatus::Continue;
 
 }
