@@ -10,11 +10,7 @@ pool:
   vmImage: ubuntu-20.04
 
 steps:
-- task: DockerInstaller@0
-  displayName: Docker Installer
-  inputs:
-    dockerVersion: 19.03.5
-    releaseType: stable
+
 - script: echo Hello, world!
   displayName: 'Run a one-line script'
 
