@@ -6,15 +6,31 @@
 trigger:
 - dev/envoy-build-script
 
-pool:
-  vmImage: ubuntu-20.04
+# pool:
+#   vmImage: ubuntu-20.04
 
-steps:
+# steps:
 
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+# - script: echo Hello, world!
+#   displayName: 'Run a one-line script'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+# - script: |
+#     echo Add other tasks to build, test, and deploy your project.
+#     echo See https://aka.ms/yaml
+#   displayName: 'Run a multi-line script'
+
+jobs:
+- job: envoy-build
+  timeoutInMinutes: 400
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - task: DockerInstaller@0
+    displayName: Docker Installer
+    inputs:
+      dockerVersion: 17.09.0-ce
+      releaseType: stable
+  - script: |
+      cd envoy-filters
+      ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release.server_only'
+    displayName: 'envoy build' 
