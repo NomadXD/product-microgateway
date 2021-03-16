@@ -20,7 +20,7 @@ trigger:
 #   displayName: 'Run a multi-line script'
 
 jobs:
-- job: envoy-build
+- job: envoy_build
   timeoutInMinutes: 400
   pool:
     vmImage: 'ubuntu-20.04'
