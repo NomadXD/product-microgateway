@@ -31,7 +31,7 @@ jobs:
       dockerVersion: 17.09.0-ce
       releaseType: stable
   - script: |
-      ls envoy-filters/envoy/
+      line="$(ls envoy-filters/envoy)" && echo $line
       cd envoy-filters
       ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release.server_only'
     displayName: 'envoy build' 
