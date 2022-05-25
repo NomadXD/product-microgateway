@@ -307,7 +307,10 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 		}
 
 		// if both resource level sandbox and production are same as api level, api level clusters will be applied with the api level basepath
-		if clusterNameProd == apiLevelClusterNameProd && clusterNameSand == apiLevelClusterNameSand {
+		if clusterNameProd == apiLevelClusterNameProd {
+			resourceBasePath = apiLevelbasePath
+		}
+		if clusterNameSand == apiLevelClusterNameSand {
 			if apiLevelbasePathSand != "" {
 				resourceBasePathSand = apiLevelbasePathSand
 			} else {
@@ -326,13 +329,13 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 			logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
 				apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePathSand)
 			clusterNameSand = ""
+		} else if clusterNameSand != "" && apiLevelbasePathSand == "" && clusterNameSand == apiLevelClusterNameSand && resourceBasePathSand != apiLevelbasePath {
+			// production endpoint basepath and sandbox endpoint basepath are different
+			logger.LoggerOasparser.Info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+			logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
+				apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePath)
+			clusterNameSand = ""
 		}
-		//else if clusterNameSand != "" && apiLevelbasePathSand == "" && clusterNameSand == apiLevelClusterNameSand && resourceBasePathSand != apiLevelbasePath {
-		//	// production endpoint basepath and sandbox endpoint basepath are different
-		//	logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
-		//		apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePath)
-		//	clusterNameSand = ""
-		//}
 
 		reqInterceptorVal := mgwSwagger.GetInterceptor(resource.GetVendorExtensions(), xWso2requestInterceptor, ResourceLevelInterceptor)
 		if reqInterceptorVal.Enable {
