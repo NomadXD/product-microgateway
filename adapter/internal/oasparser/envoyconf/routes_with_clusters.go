@@ -314,7 +314,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 				resourceBasePathSand = apiLevelbasePath
 			}
 		}
-		
+
 		if clusterNameProd != "" && clusterNameProd == apiLevelClusterNameProd && resourceBasePath != apiLevelbasePath {
 			logger.LoggerOasparser.Errorf("Error while adding resource level production endpoints for %s:%v-%v. sandbox endpoint basepath : %v and production basepath : %v mismatched",
 				apiTitle, apiVersion, resourcePath, resourceBasePath, apiLevelbasePath)
@@ -325,13 +325,12 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 			logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
 				apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePathSand)
 			clusterNameSand = ""
+		} else if clusterNameSand != "" && apiLevelbasePathSand == "" && resourceBasePathSand != "" && clusterNameSand == apiLevelClusterNameSand && resourceBasePathSand != apiLevelbasePath {
+			// production endpoint basepath and sandbox endpoint basepath are different
+			logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
+				apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePath)
+			clusterNameSand = ""
 		}
-		//else if clusterNameSand != "" && apiLevelbasePathSand == "" && clusterNameSand == apiLevelClusterNameSand && resourceBasePathSand != apiLevelbasePath {
-		//	// production endpoint basepath and sandbox endpoint basepath are different
-		//	logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
-		//		apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePath)
-		//	clusterNameSand = ""
-		//}
 
 		reqInterceptorVal := mgwSwagger.GetInterceptor(resource.GetVendorExtensions(), xWso2requestInterceptor, ResourceLevelInterceptor)
 		if reqInterceptorVal.Enable {
