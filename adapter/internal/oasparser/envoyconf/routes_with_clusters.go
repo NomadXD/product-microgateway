@@ -273,12 +273,8 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 
 		// resource level check sandbox endpoints
 		if resource.GetSandEndpoints() != nil && len(resource.GetSandEndpoints().Endpoints) > 0 {
-			//resourceBasePathSand = resourceBasePath
-			//// production and sandbox endpoint basepaths are different, so use sandbox endpoint basepath
-			//if apiLevelbasePathSand != "" {
-			//	resourceBasePathSand = apiLevelbasePathSand
-			//}
 			prevResourceBasePath := apiLevelbasePath
+			// production and sandbox endpoint basepaths are different, so use sandbox endpoint basepath
 			if apiLevelbasePathSand != "" {
 				prevResourceBasePath = apiLevelbasePathSand
 			}
@@ -318,22 +314,17 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 				resourceBasePathSand = apiLevelbasePath
 			}
 		}
-		logger.LoggerOasparser.Infof(">>>>>>> apiLevelBasePath: %v apiLevelBasePathSand: %v clusterNameSand: %v apiLevelClusterNameSand: %v resourceBasePath: %v resourceBasePathSand: %v\n",
-			apiLevelbasePath, apiLevelbasePathSand, clusterNameSand, apiLevelClusterNameSand, resourceBasePath, resourceBasePathSand)
+		//logger.LoggerOasparser.Infof("clusterNameProd: %v clusterNameSand: %v apiLevelbasePathSand: %v apiLevelClusterNameSand: %v resourceBasePathSand: %v apiLevelbasePath: %v",
+		//	clusterNameProd, clusterNameSand, apiLevelbasePathSand, apiLevelClusterNameSand, resourceBasePathSand, apiLevelbasePath)
 		if clusterNameProd != "" && clusterNameProd == apiLevelClusterNameProd && resourceBasePath != apiLevelbasePath {
-			logger.LoggerOasparser.Errorf("XXXXXXXXXXXXXXXXXXXXXX Error while adding resource level production endpoints for %s:%v-%v. sandbox endpoint basepath : %v and production basepath : %v mismatched",
+			logger.LoggerOasparser.Errorf("Error while adding resource level production endpoints for %s:%v-%v. sandbox endpoint basepath : %v and production basepath : %v mismatched",
 				apiTitle, apiVersion, resourcePath, resourceBasePath, apiLevelbasePath)
 			clusterNameProd = ""
 		}
 		if clusterNameSand != "" && apiLevelbasePathSand != "" && clusterNameSand == apiLevelClusterNameSand && resourceBasePathSand != apiLevelbasePathSand {
 			// production endpoint basepath and sandbox endpoint basepath are different
-			logger.LoggerOasparser.Errorf("XXXXXXXXXXXXXXXXXXXXXXXX Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
+			logger.LoggerOasparser.Errorf("Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
 				apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePathSand)
-			clusterNameSand = ""
-		} else if clusterNameSand != "" && apiLevelbasePathSand == "" && clusterNameSand == apiLevelClusterNameSand && resourceBasePathSand != apiLevelbasePath {
-			// production ednpoint basepath and sandbox endpoint basepath are same
-			logger.LoggerOasparser.Errorf("XXXXXXXXXXXXXXXXXXXXXXXX Error while adding resource level sandbox endpoints for %s:%v-%v. production endpoint basepath : %v and sandbox basepath : %v mismatched",
-				apiTitle, apiVersion, resourcePath, resourceBasePathSand, apiLevelbasePath)
 			clusterNameSand = ""
 		}
 
