@@ -229,6 +229,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 		clusterNameSand := apiLevelClusterNameSand
 		resourceBasePath := ""
 		resourceBasePathSand := ""
+		resourceBasePathSandAvailable := false
 		resourcePath := resource.GetPath()
 		if strictBasePath || ((resource.GetProdEndpoints() == nil || len(resource.GetProdEndpoints().Endpoints) < 1) &&
 			(resource.GetSandEndpoints() == nil || len(resource.GetSandEndpoints().Endpoints) < 1)) {
@@ -272,12 +273,11 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 
 		// resource level check sandbox endpoints
 		if resource.GetSandEndpoints() != nil && len(resource.GetSandEndpoints().Endpoints) > 0 {
-			resourceBasePathSand = resourceBasePath
+			prevResourceBasePath := apiLevelbasePath
 			// production and sandbox endpoint basepaths are different, so use sandbox endpoint basepath
 			if apiLevelbasePathSand != "" {
-				resourceBasePathSand = apiLevelbasePathSand
+				prevResourceBasePath = apiLevelbasePathSand
 			}
-			prevResourceBasePath := resourceBasePathSand
 			endpointSand := resource.GetSandEndpoints()
 			if resourceBasePathSand == "" {
 				resourceBasePathSand = strings.TrimSuffix(endpointSand.Endpoints[0].Basepath, "/")
@@ -297,6 +297,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 				} else {
 					clusters = append(clusters, clusterSand)
 					endpoints = append(endpoints, addressSand...)
+					resourceBasePathSandAvailable = true
 				}
 			}
 		}
@@ -409,7 +410,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 
 		routeP := createRoute(genRouteCreateParams(&mgwSwagger, resource, vHost, resourceBasePath, clusterNameProd,
 			clusterNameSand, operationalReqInterceptors, operationalRespInterceptorVal, organizationID, false))
-		if apiLevelbasePathSand != "" {
+		if apiLevelbasePathSand != "" || resourceBasePathSandAvailable {
 			logger.LoggerOasparser.Debugf("Creating sandbox route for : %v:%v:%v - %v", apiTitle, apiVersion, resource.GetPath(), resourceBasePathSand)
 			routeS := createRoute(genRouteCreateParams(&mgwSwagger, resource, vHost, resourceBasePathSand, clusterNameProd,
 				clusterNameSand, operationalReqInterceptors, operationalRespInterceptorVal, organizationID, true))
