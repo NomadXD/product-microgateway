@@ -135,17 +135,20 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 			// no production endpoint, assign sandbox endpoint basepath as apiLevelbasePath
 			apiLevelbasePath = strings.TrimSuffix(apiLevelEndpointSand.Endpoints[0].Basepath, "/")
 			selectedBasePathSand = apiLevelbasePath
-		} else {
+		} else if strings.TrimSuffix(mgwSwagger.GetProdEndpoints().Endpoints[0].Basepath, "/") !=
+			strings.TrimSuffix(mgwSwagger.GetSandEndpoints().Endpoints[0].Basepath, "/") {
 			// production and sandbox endpoint basepaths are different, assign sandbox endpoint basepath to
 			// apiLevelbasePathSand
-			if mgwSwagger.GetProdEndpoints().Endpoints[0].Basepath != mgwSwagger.GetSandEndpoints().Endpoints[0].Basepath {
-				apiLevelbasePathSand = strings.TrimSuffix(apiLevelEndpointSand.Endpoints[0].Basepath, "/")
-				selectedBasePathSand = apiLevelbasePathSand
-			} else {
-				// production and sandbox endpoint basepaths are same, select apiLevelbasePath which contains the
-				// production endpoint basepath
-				selectedBasePathSand = apiLevelbasePath
-			}
+			apiLevelbasePathSand = strings.TrimSuffix(apiLevelEndpointSand.Endpoints[0].Basepath, "/")
+			selectedBasePathSand = apiLevelbasePathSand
+			//if mgwSwagger.GetProdEndpoints().Endpoints[0].Basepath != mgwSwagger.GetSandEndpoints().Endpoints[0].Basepath {
+			//	apiLevelbasePathSand = strings.TrimSuffix(apiLevelEndpointSand.Endpoints[0].Basepath, "/")
+			//	selectedBasePathSand = apiLevelbasePathSand
+			//} else {
+			//	// production and sandbox endpoint basepaths are same, select apiLevelbasePath which contains the
+			//	// production endpoint basepath
+			//	selectedBasePathSand = apiLevelbasePath
+			//}
 		}
 		apiLevelClusterNameSand = getClusterName(apiLevelEndpointSand.EndpointPrefix, organizationID, vHost,
 			apiTitle, apiVersion, "")
@@ -334,7 +337,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 		}
 
 		if clusterNameProd != "" && clusterNameProd == apiLevelClusterNameProd && resourceBasePath != apiLevelbasePath &&
-			resourceBasePath != ""{
+			resourceBasePath != "" {
 			logger.LoggerOasparser.Errorf("Error while adding resource level production endpoints for %s:%v-%v. sandbox endpoint basepath : %v and production basepath : %v mismatched",
 				apiTitle, apiVersion, resourcePath, resourceBasePath, apiLevelbasePath)
 			clusterNameProd = ""
