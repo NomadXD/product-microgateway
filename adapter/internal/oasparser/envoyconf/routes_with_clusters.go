@@ -131,7 +131,7 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 	if mgwSwagger.GetSandEndpoints() != nil && len(mgwSwagger.GetSandEndpoints().Endpoints) > 0 {
 		selectedBasePathSand := apiLevelBasePathProd
 		apiLevelEndpointSand := mgwSwagger.GetSandEndpoints()
-		if apiLevelBasePathProd == "" {
+		if apiLevelBasePathProd == "" && apiLevelClusterNameProd == "" {
 			// no production endpoint, assign sandbox endpoint basepath as apiLevelbasePath
 			apiLevelBasePathProd = strings.TrimSuffix(apiLevelEndpointSand.Endpoints[0].Basepath, "/")
 			selectedBasePathSand = apiLevelBasePathProd
@@ -969,6 +969,9 @@ end`
 			resourceRegex = strings.TrimSuffix(resourceRegex, "((/(.*))*)")
 		}
 		pathRegex = "^" + basePath + resourceRegex
+	}
+	if substitutionString == "" {
+		substitutionString = "/"
 	}
 	if xWso2Basepath != "" {
 		action = &routev3.Route_Route{
