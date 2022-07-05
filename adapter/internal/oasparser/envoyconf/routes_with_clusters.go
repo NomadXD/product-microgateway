@@ -311,6 +311,8 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 						resourceBasePathSandAvailable = true
 					}
 				}
+			} else if resource.GetSandEndpoints() != nil && len(resource.GetSandEndpoints().Endpoints) > 0 {
+				clusterNameSand = clusterNameProd
 			}
 		}
 		if clusterNameSand == "" {
