@@ -1438,7 +1438,7 @@ func isSandboxClusterRequired(productionEndpoint *model.EndpointCluster, sandbox
 }
 
 func createInterceptorAPIClusters(mgwSwagger model.MgwSwagger, interceptorCerts map[string][]byte, vHost string, organizationID string) (clustersP []*clusterv3.Cluster,
-	addressesP []*corev3.Address, apiRequestInterceptorEndpoint model.InterceptEndpoint, apiResponseInterceptorEndpoint model.InterceptEndpoint) {
+	addressesP []*corev3.Address, apiRequestInterceptorEndpoint *model.InterceptEndpoint, apiResponseInterceptorEndpoint *model.InterceptEndpoint) {
 	var (
 		clusters  []*clusterv3.Cluster
 		endpoints []*corev3.Address
@@ -1479,11 +1479,11 @@ func createInterceptorAPIClusters(mgwSwagger model.MgwSwagger, interceptorCerts 
 			endpoints = append(endpoints, addresses...)
 		}
 	}
-	return clusters, endpoints, apiResponseInterceptor, apiResponseInterceptor
+	return clusters, endpoints, &apiRequestInterceptor, &apiResponseInterceptor
 }
 
 func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorCerts map[string][]byte, vHost string, organizationID string,
-	apiRequestInterceptor model.InterceptEndpoint, apiResponseInterceptor model.InterceptEndpoint, resource *model.Resource) (clustersP []*clusterv3.Cluster, addressesP []*corev3.Address,
+	apiRequestInterceptor *model.InterceptEndpoint, apiResponseInterceptor *model.InterceptEndpoint, resource *model.Resource) (clustersP []*clusterv3.Cluster, addressesP []*corev3.Address,
 	operationalReqInterceptorsEndpoint map[string]model.InterceptEndpoint, operationalRespInterceptorValEndpoint map[string]model.InterceptEndpoint) {
 	var (
 		clusters  []*clusterv3.Cluster
@@ -1503,14 +1503,14 @@ func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorC
 			logger.LoggerOasparser.Errorf("Error while adding resource level request intercept external cluster for %s. %v",
 				apiTitle, err.Error())
 		} else {
-			resourceRequestInterceptor = reqInterceptorVal
+			resourceRequestInterceptor = &reqInterceptorVal
 			clusters = append(clusters, cluster)
 			endpoints = append(endpoints, addresses...)
 		}
 	}
 
 	// create operational level response interceptor clusters
-	operationalReqInterceptors := mgwSwagger.GetOperationInterceptors(apiRequestInterceptor, resourceRequestInterceptor, resource.GetMethod(), true)
+	operationalReqInterceptors := mgwSwagger.GetOperationInterceptors(*apiRequestInterceptor, *resourceRequestInterceptor, resource.GetMethod(), true)
 	for method, opI := range operationalReqInterceptors {
 		if opI.Enable && opI.Level == OperationLevelInterceptor {
 			logger.LoggerOasparser.Debugf("Operation level request interceptors found for %v:%v-%v-%v", apiTitle, apiVersion, resource.GetPath(),
@@ -1523,7 +1523,7 @@ func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorC
 				logger.LoggerOasparser.Errorf("Error while adding operational level request intercept external cluster for %v:%v-%v-%v. %v",
 					apiTitle, apiVersion, resource.GetPath(), opID, err.Error())
 				// setting resource level interceptor to failed operation level interceptor.
-				operationalReqInterceptors[method] = resourceRequestInterceptor
+				operationalReqInterceptors[method] = *resourceRequestInterceptor
 			} else {
 				clusters = append(clusters, cluster)
 				endpoints = append(endpoints, addresses...)
@@ -1542,14 +1542,14 @@ func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorC
 			logger.LoggerOasparser.Errorf("Error while adding resource level response intercept external cluster for %s. %v",
 				apiTitle, err.Error())
 		} else {
-			resourceResponseInterceptor = respInterceptorVal
+			resourceResponseInterceptor = &respInterceptorVal
 			clusters = append(clusters, cluster)
 			endpoints = append(endpoints, addresses...)
 		}
 	}
 
 	// create operation level response interceptor clusters
-	operationalRespInterceptorVal := mgwSwagger.GetOperationInterceptors(apiResponseInterceptor, resourceResponseInterceptor, resource.GetMethod(),
+	operationalRespInterceptorVal := mgwSwagger.GetOperationInterceptors(*apiResponseInterceptor, *resourceResponseInterceptor, resource.GetMethod(),
 		false)
 	for method, opI := range operationalRespInterceptorVal {
 		if opI.Enable && opI.Level == OperationLevelInterceptor {
@@ -1563,7 +1563,7 @@ func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorC
 				logger.LoggerOasparser.Errorf("Error while adding operational level response intercept external cluster for %v:%v-%v-%v. %v",
 					apiTitle, apiVersion, resource.GetPath(), opID, err.Error())
 				// setting resource level interceptor to failed operation level interceptor.
-				operationalRespInterceptorVal[method] = resourceResponseInterceptor
+				operationalRespInterceptorVal[method] = *resourceResponseInterceptor
 			} else {
 				clusters = append(clusters, cluster)
 				endpoints = append(endpoints, addresses...)
