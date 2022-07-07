@@ -331,11 +331,11 @@ func CreateRoutesWithClusters(mgwSwagger model.MgwSwagger, upstreamCerts map[str
 		endpoints = append(endpoints, endpointsI...)
 
 		routeP := createRoute(genRouteCreateParams(&mgwSwagger, resource, vHost, resourceBasePath, clusterNameProd,
-			clusterNameSand, operationalReqInterceptors, operationalRespInterceptorVal, organizationID, false))
+			clusterNameSand, *operationalReqInterceptors, *operationalRespInterceptorVal, organizationID, false))
 		if apiLevelBasePathSand != "" || resourceBasePathSandAvailable {
 			logger.LoggerOasparser.Debugf("Creating sandbox route for : %v:%v:%v - %v", apiTitle, apiVersion, resource.GetPath(), resourceBasePathSand)
 			routeS := createRoute(genRouteCreateParams(&mgwSwagger, resource, vHost, resourceBasePathSand, clusterNameProd,
-				clusterNameSand, operationalReqInterceptors, operationalRespInterceptorVal, organizationID, true))
+				clusterNameSand, *operationalReqInterceptors, *operationalRespInterceptorVal, organizationID, true))
 			// Sandbox route should be appended before to prod route to have the expected header based sandbox routing.
 			routes = append(routes, routeS)
 		}
@@ -1484,7 +1484,7 @@ func createInterceptorAPIClusters(mgwSwagger model.MgwSwagger, interceptorCerts 
 
 func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorCerts map[string][]byte, vHost string, organizationID string,
 	apiRequestInterceptor *model.InterceptEndpoint, apiResponseInterceptor *model.InterceptEndpoint, resource *model.Resource) (clustersP []*clusterv3.Cluster, addressesP []*corev3.Address,
-	operationalReqInterceptorsEndpoint map[string]model.InterceptEndpoint, operationalRespInterceptorValEndpoint map[string]model.InterceptEndpoint) {
+	operationalReqInterceptorsEndpoint *map[string]model.InterceptEndpoint, operationalRespInterceptorValEndpoint *map[string]model.InterceptEndpoint) {
 	var (
 		clusters  []*clusterv3.Cluster
 		endpoints []*corev3.Address
@@ -1570,5 +1570,5 @@ func createInterceptorResourceClusters(mgwSwagger model.MgwSwagger, interceptorC
 			}
 		}
 	}
-	return clusters, endpoints, operationalReqInterceptors, operationalRespInterceptorVal
+	return clusters, endpoints, &operationalReqInterceptors, &operationalRespInterceptorVal
 }
