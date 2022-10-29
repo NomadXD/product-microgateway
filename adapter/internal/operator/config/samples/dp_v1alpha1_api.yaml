@@ -1,0 +1,17 @@
+apiVersion: dp.wso2.com/v1alpha1
+kind: API
+metadata:
+  labels:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/instance: swagger-petstore
+    app.kubernetes.io/part-of: operator
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator
+  name: swagger-petstore
+spec:
+  apiDisplayName: swagger-petstore
+  apiVersion: 1.0.6
+  definitionFileRef: swagger-definition-swaggerpetstore
+  prodHTTPRouteRef: http-route-swaggerpetstore
+  apiType: REST
+  context: /pet-store-api/1.0.6

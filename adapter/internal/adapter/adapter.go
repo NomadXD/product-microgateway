@@ -20,6 +20,7 @@ package adapter
 
 import (
 	"crypto/tls"
+	"github.com/wso2/product-microgateway/adapter/internal/operator"
 	"strings"
 	"time"
 
@@ -259,6 +260,8 @@ func Run(conf *config.Config) {
 		go ga.InitGAClient()
 		FetchAPIUUIDsFromGlobalAdapter()
 	}
+
+	go operator.InitOperator()
 
 	eventHubEnabled := conf.ControlPlane.Enabled
 	if eventHubEnabled {
