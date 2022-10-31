@@ -22,6 +22,8 @@ import (
 	"github.com/wso2/product-microgateway/adapter/internal/operator/controllers"
 	"github.com/wso2/product-microgateway/adapter/internal/operator/synchronizer"
 	"os"
+	gwapiv1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwapiv1b1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -47,6 +49,10 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(dpv1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(gwapiv1b1.AddToScheme(scheme))
+
+	utilruntime.Must(gwapiv1a2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

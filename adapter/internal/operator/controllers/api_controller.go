@@ -20,6 +20,8 @@ import (
 	"context"
 	"github.com/wso2/product-microgateway/adapter/internal/loggers"
 	"github.com/wso2/product-microgateway/adapter/internal/operator/synchronizer"
+	"github.com/wso2/product-microgateway/adapter/internal/operator/utils"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -76,20 +78,63 @@ func NewAPIController(mgr manager.Manager, operatorDataStore *synchronizer.Opera
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
+
+	// 1. Check whether the API Def exist, if not DELETE event.
 	var apiDef dpv1alpha1.API
 	if err := r.client.Get(ctx, req.NamespacedName, &apiDef); err != nil {
 		loggers.LoggerOperator.Errorf("apiDef related to reconcile with key: %v not found", req.NamespacedName.String())
 	}
-	loggers.LoggerOperator.Infof("Reconciled API: %v", apiDef.Spec.APIDisplayName)
-	if err := r.ods.AddNewAPI(apiDef, gwapiv1b1.HTTPRoute{}, gwapiv1b1.HTTPRoute{}); err != nil {
-		loggers.LoggerOperator.Errorf("Error storing new API in operator data store: %v", err)
+
+	// 2. Handle Http route validation
+	prodHttpRoute, sandHttpRoute, err := validateHttpRouteRefs(ctx, r.client, req.Namespace, apiDef.Spec.ProdHTTPRouteRef, apiDef.Spec.SandHTTPRouteRef)
+	if err != nil {
+		loggers.LoggerOperator.Errorf("Error validating the HttpRouteRefs for API: %v", apiDef.Spec.APIDisplayName)
+		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+
+	// 3. Check the Operator data store for the received API event
+	cachedAPI, found := r.ods.GetAPI(utils.NamespacedName(&apiDef))
+
+	if !found {
+		if err := r.ods.AddNewAPI(apiDef, prodHttpRoute, sandHttpRoute); err != nil {
+			loggers.LoggerOperator.Errorf("Error storing the new API in the operator data store: %v", err)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	} else {
+		if apiDef.Generation > cachedAPI.APIDefinition.Generation {
+			if err := r.ods.UpdateAPIDef(apiDef); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		if prodHttpRoute.Generation > cachedAPI.ProdHttpRoute.Generation {
+			if err := r.ods.UpdateHttpRoute(utils.NamespacedName(&apiDef), prodHttpRoute, true); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	//loggers.LoggerOperator.Infof("Reconciled API: %v", apiDef.Spec.APIDisplayName)
+	//if err := r.ods.AddNewAPI(apiDef, gwapiv1b1.HTTPRoute{}, gwapiv1b1.HTTPRoute{}); err != nil {
+	//	loggers.LoggerOperator.Errorf("Error storing new API in operator data store: %v", err)
+	//}
+	//return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *APIReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&dpv1alpha1.API{}).
-		Complete(r)
+func validateHttpRouteRefs(ctx context.Context, client client.Client, namespace string,
+	prodHttpRouteRef string, sandHttpRouteRef string) (gwapiv1b1.HTTPRoute, gwapiv1b1.HTTPRoute, error) {
+	var prodHttpRoute gwapiv1b1.HTTPRoute
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: prodHttpRouteRef}, &prodHttpRoute); err != nil {
+		loggers.LoggerOperator.Errorf("Production HttpRoute not found: %v", prodHttpRouteRef)
+		return gwapiv1b1.HTTPRoute{}, gwapiv1b1.HTTPRoute{}, err
+	}
+	var sandHttpRoute gwapiv1b1.HTTPRoute
+	if sandHttpRouteRef != "" {
+		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: sandHttpRouteRef}, &sandHttpRoute); err != nil {
+			loggers.LoggerOperator.Errorf("Error fetching SandHTTPRoute: %v:%v", sandHttpRouteRef, err)
+			return prodHttpRoute, gwapiv1b1.HTTPRoute{}, err
+		}
+	}
+	return prodHttpRoute, sandHttpRoute, nil
 }
